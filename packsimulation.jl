@@ -8,9 +8,6 @@ using LinearAlgebra
 3. need to calibrate magnitudes of things, such as size of grid, velocity (just in case vel too big, go out of bounds)
 =#
 
-size = (10.0, 10.0)
-space = ContinuousSpace(size; periodic = false;)
-
 # Maybe add health here too
 @agent struct Wolf(ContinuousAgent{2, Float64})
 #    group::Int
@@ -19,11 +16,6 @@ end
 @agent struct Sheep(ContinuousAgent{2, Float64})
 #    group::Int
 end
-
-model = StandardABM(Wolf, space; properties, agent_step!, rng,
-container = Vector, # agents are not removed, so we use this
-scheduler = Schedulers.Randomly() # all agents are activated once at random
-)
 
 # will put in constructor; for now, putting hard-coded stuff here
 min_safe_distance = 0.1
@@ -74,7 +66,7 @@ end
 
 using Random: Xoshiro # access the RNG object
 
-function initialize(; total_agents = 5, gridsize = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
+function initialize(; total_agents = 5, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
     space = ContinuousSpace(size; periodic = false;)
     properties = Dict(:min_safe_distance => min_safe_distance)
     rng = Xoshiro(seed)
