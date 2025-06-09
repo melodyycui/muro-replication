@@ -1,4 +1,5 @@
 using Agents
+using LinearAlgebra
 
 # need to calibrate magnitudes of things (just in case vel too big, go out of bounds)
 size = (10.0, 10.0)
@@ -29,22 +30,32 @@ function wolf_step!(predator, prey, model)
     
     if (current_distance <= min_safe_distance)
 
-        acceleration = [0, 0]
+        wolf_repulsion = [0, 0]
+        rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
 
         # for each neighbor wolf, find repulsive force α distance
         for neighbor in nearby_agents(prey, model)
             
             # sum up the repulsive force vectors to get acceleration
             distance_between = norm(predator.pos - neighbor.pos)
-            acceleration += ww_force_coefficient * (predator.pos - neighbor.pos) / (distance_between)^2
-        
+            wolf_repulsion += ww_force_coefficient * (predator.pos - neighbor.pos) / (distance_between)^2
+
         end
 
-        # update velocity with v = v₀ + at
-        predator.vel += acceleration * dt
+        # projecting the repulsive force vector onto the tangential vector
+        # to determine the direction the wolf travels along the circle
+        u = rotation_matrix * (predator.pos - prey.pos)
+        dot_product = dot(u, wolf_repulsion)
+        proj_u_v = (dot_product / norm(u)^2) * u
+
+        predator.vel = proj_u_v
 
     else
-        # velocity here only depending on sheep attraction
+        
+
+
+
+        # impact of sheep attraction on distance to sheep
         predator.vel = ((predator.pos - prey.pos)/current_distance)/dt
     
     end
