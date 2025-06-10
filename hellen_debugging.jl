@@ -31,7 +31,8 @@ dt = 1
 
 function animal_step!(predator, model)
 
-    prey = nothing # initialize prey variable
+    prey = nothing
+
     for agent in allagents(model)
         if agent.group == 1 # identify the prey (sheep)
             prey = agent
@@ -77,9 +78,9 @@ function animal_step!(predator, model)
             predator.vel = wolf_encounter_velocity + wolf_repulsion ## THINK about how repulsive forces will impact the velocity 
     
         end
-
-    move_agent!(predator, model, dt)
-    return
+    
+        move_agent!(predator, model, dt)
+    end
 end
 
 function initialize(; total_agents = 5, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
@@ -113,5 +114,3 @@ am = 'o'
 
 abmvideo("wolf_hunt.mp4", model;
 title = "Wolf Hunt Simulation", framerate = 15, frames = 200, ac, as, am)
-
-end
