@@ -4,8 +4,7 @@ Pkg.add("LinearAlgebra")
 Pkg.add("InteractiveDynamics")
 Pkg.add("CairoMakie")
 
-using InteractiveDynamics
-using CairoMakie
+using InteractiveDynamics, CairoMakie
 
 using Agents
 using LinearAlgebra
@@ -83,7 +82,7 @@ function animal_step!(predator, model)
     end
 end
 
-function initialize(; total_agents = 5, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
+function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
     space = ContinuousSpace(size; periodic = false)
     properties = Dict(:min_safe_distance => min_safe_distance)
     rng = Xoshiro(seed)
@@ -113,4 +112,4 @@ as(a::Animal) = a.group == 1 ? 13 : 10
 am = 'o'
 
 abmvideo("wolf_hunt.mp4", model;
-title = "Wolf Hunt Simulation", framerate = 15, frames = 200, ac, as, am)
+title = "Wolf Hunt Simulation", framerate = 15, frames = 20, ac, as, am)
