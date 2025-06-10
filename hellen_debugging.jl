@@ -29,11 +29,7 @@ ww_force_coefficient = 0.5
 sw_force_coefficient = 2 # force of sheep on wolf
 dt = 1
 
-println("hello1")
-
 function animal_step!(predator, model)
-
-    println("hello2")
 
     prey = nothing # initialize prey variable
     for agent in allagents(model)
@@ -103,8 +99,6 @@ function initialize(; total_agents = 5, size = (10.0, 10.0), min_safe_distance =
     add_agent!(model; group = 1, vel = (0.0, 0.0)) # add one sheep
     return model
 end
-
-println("hello3")
 
 simulator = initialize()
 
