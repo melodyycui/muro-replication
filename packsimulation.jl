@@ -25,11 +25,8 @@ ww_force_coefficient = 0.5              # coefficient of repulsive force exerted
 sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
 dt = 1                                  # time step for simulation
 
-function animal_step!(sheep::Sheep, model)
-end
-
 # Function to move a wolf at each time step, assuming stationary prey (sheep)
-function animal_step!(wolf::Wolf, model)
+function animal_step!(wolf, model)
 
     # identify the sheep in the model
     sheep = nothing
