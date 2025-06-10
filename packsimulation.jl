@@ -1,57 +1,49 @@
-using Pkg
-Pkg.add("Agents")
-Pkg.add("LinearAlgebra")
-Pkg.add("InteractiveDynamics")
-Pkg.add("CairoMakie")
-
-using InteractiveDynamics, CairoMakie
-
-using Agents
-using LinearAlgebra
-
-using Random: Xoshiro # access the RNG object
+using Pkg, InteractiveDynamics, CairoMakie, Agents, LinearAlgebra
+using Random: Xoshiro
 
 #= NEED TO CONSIDER
-1. Consistent naming of sheep/prey and wolf/predator
 2. Double check vector directions (final - initial eg. positions)
 3. need to calibrate magnitudes of things, such as size of grid, velocity (just in case vel too big, go out of bounds)
 =#
 
 # Maybe add health here too
+# Creating Animal agent type which consists of Sheep (group = 1) and Wolves (group = 2)
 @agent struct Animal(ContinuousAgent{2, Float64})
-    group::Int # 1 for sheep, 2 for wolf
+    group::Int
 end
 
-# will put in constructor; for now, putting hard-coded stuff here
-min_safe_distance = 1.0
-ww_force_coefficient = 0.5
-sw_force_coefficient = 2 # force of sheep on wolf
-dt = 1
+# can maybe be put in our slider/hard coded parameters
+min_safe_distance = 1.0                 # critical distance at which wolf begins exhibiting encircling behavior
+ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
+sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
+dt = 1                                  # time step for simulation
 
-function animal_step!(predator, model)
+# Function to move a wolf at each time step, assuming stationary prey (sheep)
+function animal_step!(wolf, model)
 
-    prey = nothing
-
+    # identify the sheep in the model
+    sheep = nothing
     for agent in allagents(model)
-        if agent.group == 1 # identify the prey (sheep)
-            prey = agent
-            break # exit loop once prey is found
+        if agent.group == 1
+            sheep = agent
+            break                       # exit loop once prey is found
         end
     end
 
-    if predator.group == 2 # wolf
-        current_distance = norm(prey.pos - predator.pos)
-        wolf_encounter_speed = 1.0 # this is an arbitrary speed choice
+    # Model the behavior of the wolf
+    if wolf.group == 2              # check agent is a wolf
+        current_distance = norm(sheep.pos - wolf.pos)
+        wolf_encounter_speed = 1.0      # this is an arbitrary speed choice
 
         # for each neighbor wolf, find repulsive force α distance
         wolf_repulsion = [0, 0]
-        for neighbor in nearby_agents(predator, model)
+        for neighbor in nearby_agents(wolf, model)
 
-            if neighbor.id != predator.id && neighbor.group == 2
+            if neighbor.id != wolf.id && neighbor.group == 2
             
                 # sum up the repulsive force vectors to get acceleration
-                distance_between = norm(predator.pos - neighbor.pos)
-                wolf_repulsion += ww_force_coefficient * (predator.pos - neighbor.pos) / (distance_between)^2
+                distance_between = norm(wolf.pos - neighbor.pos)
+                wolf_repulsion += ww_force_coefficient * (wolf.pos - neighbor.pos) / (distance_between)^2
 
             end
 
@@ -63,22 +55,22 @@ function animal_step!(predator, model)
 
             # projecting the repulsive force vector onto the tangential vector
             # to determine the direction the wolf travels along the circle
-            u = rotation_matrix * (predator.pos - prey.pos) # POTENTIAL FLAG: may be prey.pos - predator.pos (final - initial)
+            u = rotation_matrix * (wolf.pos - sheep.pos)
             dot_product = dot(u, wolf_repulsion)
             proj_u_v = (dot_product / norm(u)^2) * u * wolf_encounter_speed
 
-            predator.vel = proj_u_v
+            wolf.vel = proj_u_v
 
-        else # (wolf is outside critical distance)
+        else
 
             # impact of sheep attraction on distance to sheep
-            wolf_encounter_velocity = (prey.pos - predator.pos) / norm(prey.pos - predator.pos) * wolf_encounter_speed
+            wolf_encounter_velocity = (sheep.pos - wolf.pos) / norm(sheep.pos - wolf.pos) * wolf_encounter_speed
 
-            predator.vel = wolf_encounter_velocity + wolf_repulsion ## THINK about how repulsive forces will impact the velocity 
+            wolf.vel = wolf_encounter_velocity + wolf_repulsion ## THINK about how repulsive forces will impact the velocity 
     
         end
     
-        move_agent!(predator, model, dt)
+        move_agent!(wolf, model, dt)
     end
 end
 
@@ -99,8 +91,6 @@ function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance =
     add_agent!(model; group = 1, vel = (0.0, 0.0)) # add one sheep
     return model
 end
-
-simulator = initialize()
 
 # Attempting to Plot wolf model
 
