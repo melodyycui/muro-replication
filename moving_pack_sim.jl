@@ -11,34 +11,17 @@ using Random: Xoshiro
     group::Int
 end
 
-@agent struct Wolf(ContinuousAgent{2, Float64})
-end
-
-@agent struct Sheep(ContinuousAgent{2, Float64})
-end
-
-@multiagent Animal(Wolf, Sheep) <: AbstractAgent
-
 # can maybe be put in our slider/hard coded parameters
 min_safe_distance = 1.0                 # critical distance at which wolf begins exhibiting encircling behavior
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
 sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
 dt = 1                                  # time step for simulation
 
-function animal_step!(sheep::Sheep, model)
-end
-
 # Function to move a wolf at each time step, assuming stationary prey (sheep)
-function animal_step!(wolf::Wolf, model)
+function animal_step!(wolf, model)
 
     # identify the sheep in the model
-    sheep = nothing
-    for agent in allagents(model)
-        if agent.group == 1
-            sheep = agent
-            break                       # exit loop once prey is found
-        end
-    end
+    sheep = model[model.properties[:sheep_id]]
 
     # Model the behavior of the wolf
     if wolf.group == 2              # check agent is a wolf
@@ -98,14 +81,14 @@ function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance =
         add_agent!(model; group = 2, vel = (0.0, 0.0))
     end 
 
-    add_agent!(model; group = 1, vel = (0.0, 0.0)) # add one sheep
+    sheep = add_agent!(model; group = 1, vel = (0.0, 0.0)) # add one sheep
+    model.properties[:sheep_id] = sheep.id
     return model
 end
 
 # Attempting to Plot wolf model
 
 model = initialize()
-println("hello")
 
 ac(a::Animal) = a.group == 1 ? :blue : :green
 as(a::Animal) = a.group == 1 ? 13 : 10
