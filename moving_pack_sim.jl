@@ -21,7 +21,13 @@ dt = 1                                  # time step for simulation
 function animal_step!(wolf, model)
 
     # identify the sheep in the model
-    sheep = model[model.properties[:sheep_id]]
+    sheep = nothing
+    for agent in allagents(model)
+        if agent.group == 1
+            sheep = agent
+            break                       # exit loop once prey is found
+        end
+    end
 
     # Model the behavior of the wolf
     if wolf.group == 2              # check agent is a wolf
@@ -69,7 +75,7 @@ end
 
 function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
     space = ContinuousSpace(size; periodic = false)
-    properties = Dict(:min_safe_distance => min_safe_distance)
+    properties = Dict{Symbol, Any}(:min_safe_distance => min_safe_distance)
 
     rng = Xoshiro(seed)
 
@@ -82,8 +88,7 @@ function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance =
         add_agent!(model; group = 2, vel = (0.0, 0.0))
     end 
 
-    sheep = add_agent!(model; group = 1, vel = (0.0, 0.0)) # add one sheep
-    model.sheep_id = sheep.id
+    add_agent!(model; group = 1, vel = (0.0, 0.0)) # add one sheep
     return model
 end
 

@@ -11,14 +11,6 @@ using Random: Xoshiro
     group::Int
 end
 
-@agent struct Wolf(ContinuousAgent{2, Float64})
-end
-
-@agent struct Sheep(ContinuousAgent{2, Float64})
-end
-
-@multiagent Animal(Wolf, Sheep) <: AbstractAgent
-
 # can maybe be put in our slider/hard coded parameters
 min_safe_distance = 1.0                 # critical distance at which wolf begins exhibiting encircling behavior
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
