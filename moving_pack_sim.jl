@@ -69,7 +69,7 @@ end
 
 function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
     space = ContinuousSpace(size; periodic = false)
-    properties = Dict{Any, Any}(:min_safe_distance => min_safe_distance)
+    properties = Dict(:min_safe_distance => min_safe_distance)
 
     rng = Xoshiro(seed)
 
