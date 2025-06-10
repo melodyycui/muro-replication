@@ -1,3 +1,7 @@
+using Pkg
+Pkg.add("Agents")
+Pkg.add("LinearAlgebra")
+
 using Agents
 using LinearAlgebra
 
@@ -10,7 +14,7 @@ using LinearAlgebra
 
 # Maybe add health here too
 @agent struct Wolf(ContinuousAgent{2, Float64})
-#    group::Int
+    # vel::Vector{Float64}
 end
 
 @agent struct Sheep(ContinuousAgent{2, Float64})
@@ -46,9 +50,9 @@ function wolf_step!(predator, prey, model)
         # to determine the direction the wolf travels along the circle
         u = rotation_matrix * (predator.pos - prey.pos) # POTENTIAL FLAG: may be prey.pos - predator.pos (final - initial)
         dot_product = dot(u, wolf_repulsion)
-        proj_u_v = (dot_product / norm(u)^2) * u 
+        proj_u_v = (dot_product / norm(u)^2) * u * wolf_encounter_speed
 
-        predator.vel = proj_u_v # Hellen question: does a scalar come into play here?
+        predator.vel = proj_u_v
 
     else # (wolf is outside critical distance)
 
@@ -66,8 +70,17 @@ end
 
 using Random: Xoshiro # access the RNG object
 
+#=
+function add_agent_single!(model, AgentType)
+    pos = rand(model.space)
+    vel = zeros(2)
+    return add_agent!(AgentType(pos, vel), model)
+end
+
+=#
+
 function initialize(; total_agents = 5, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
-    space = ContinuousSpace(size; periodic = false;)
+    space = ContinuousSpace(size; periodic = false)
     properties = Dict(:min_safe_distance => min_safe_distance)
     rng = Xoshiro(seed)
     model = StandardABM(Wolf, space; properties, agent_step! = wolf_step!, rng,
@@ -76,10 +89,23 @@ function initialize(; total_agents = 5, size = (10.0, 10.0), min_safe_distance =
     )
 
     for n in 1:total_agents
-        add_agent_single(model;)
+        add_agent_single!(model,Wolf;)
     end 
     return model
 end
 
 simulator = initialize()
+
+# Attempting to Plot wolf model
+Pkg.add("InteractiveDynamics")
+Pkg.add("CairoMakie")
+
+using InteractiveDynamics
+using CairoMakie
+ac() = :red
+as() = 10
+model = initialize()
+
+abmvideo("wolf_hunt.mp4", model, wolf_step!;
+title = "Wolf Hunt Simulation", framerate = 15, frames = 200, as, ac)
 
