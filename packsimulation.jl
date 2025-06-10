@@ -44,11 +44,11 @@ function wolf_step!(predator, prey, model)
 
         # projecting the repulsive force vector onto the tangential vector
         # to determine the direction the wolf travels along the circle
-        u = rotation_matrix * (predator.pos - prey.pos)
+        u = rotation_matrix * (predator.pos - prey.pos) # POTENTIAL FLAG: may be prey.pos - predator.pos (final - initial)
         dot_product = dot(u, wolf_repulsion)
-        proj_u_v = (dot_product / norm(u)^2) * u
+        proj_u_v = (dot_product / norm(u)^2) * u 
 
-        predator.vel = proj_u_v
+        predator.vel = proj_u_v # Hellen question: does a scalar come into play here?
 
     else # (wolf is outside critical distance)
 
