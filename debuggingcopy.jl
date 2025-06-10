@@ -40,7 +40,7 @@ function wolf_step!(Union{predator,prey}, model)
             
         # sum up the repulsive force vectors to get acceleration
         distance_between = norm(predator.pos - neighbor.pos)
-        wolf_repulsion += ww_force_coefficient * (predator.pos - neighbor.pos) / (distance_between)^2
+        wolf_repulsion += w_force_coefficient * (predator.pos - neighbor.pos) / (distance_between)^2
 
     end
     
