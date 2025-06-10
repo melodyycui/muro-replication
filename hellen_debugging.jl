@@ -24,7 +24,7 @@ using Random: Xoshiro # access the RNG object
 end
 
 # will put in constructor; for now, putting hard-coded stuff here
-min_safe_distance = 0.1
+min_safe_distance = 1.0
 ww_force_coefficient = 0.5
 sw_force_coefficient = 2 # force of sheep on wolf
 dt = 1
@@ -42,7 +42,7 @@ function animal_step!(predator, model)
 
     if predator.group == 2 # wolf
         current_distance = norm(prey.pos - predator.pos)
-        wolf_encounter_speed = 10 # this is an arbitrary speed choice
+        wolf_encounter_speed = 1.0 # this is an arbitrary speed choice
 
         # for each neighbor wolf, find repulsive force α distance
         wolf_repulsion = [0, 0]
