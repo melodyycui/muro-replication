@@ -69,10 +69,11 @@ end
 
 function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
     space = ContinuousSpace(size; periodic = false)
-    properties = Dict(:min_safe_distance => min_safe_distance)
+    properties = Dict{Any, Any}(:min_safe_distance => min_safe_distance)
+
     rng = Xoshiro(seed)
 
-    model = StandardABM(Animal, space; properties, agent_step! = animal_step!, rng,
+    model = StandardABM(Animal, space; properties = properties, agent_step! = animal_step!, rng,
         container = Vector, # agents are not removed, so we use this
         scheduler = Schedulers.Randomly() # all agents are activated once at random
     )
@@ -82,9 +83,11 @@ function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance =
     end 
 
     sheep = add_agent!(model; group = 1, vel = (0.0, 0.0)) # add one sheep
-    model.properties[:sheep_id] = sheep.id
+    model.sheep_id = sheep.id
     return model
 end
+
+
 
 # Attempting to Plot wolf model
 
