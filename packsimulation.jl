@@ -94,7 +94,6 @@ end
 # Attempting to Plot wolf model
 
 model = initialize()
-println("hello")
 
 ac(a::Animal) = a.group == 1 ? :blue : :green
 as(a::Animal) = a.group == 1 ? 13 : 10
