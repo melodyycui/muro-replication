@@ -11,9 +11,28 @@ end
 min_safe_distance = 1.0                 # critical distance at which wolf begins exhibiting encircling behavior
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
 sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
+sheep_angle_of_movement = 0.0           # initial angle of movement for sheep
+sheep_speed = 0.5                       # initial tangential speed for sheep
+sheep_tangent_acceleration = - 0.25     # constant tangential deceleration (slowing down)
 dt = 1                                  # time step for simulation
 
-# Function to move a wolf at each time step, assuming stationary prey (sheep)
+# Function to move a sheep at each time step
+function animal_step!(agent::Sheep, model)
+    
+    # coding the movement described in section 3.2 of Muro
+    radius_of_movement = 5.0                      # radius
+
+
+    sheep_speed = max(sheep_speed + sheep_tangent_acceleration * dt, 0)   # speed cannot be negative
+    angle_of_movement += (sheep_speed / radius_of_movement) * dt    # update angle
+    agent.vel = [radius_of_movement * cos(angle_of_movement), radius_of_movement * sin(angle_of_movement)]
+    
+    move_agent!(agent, model, dt)
+
+end
+
+
+# Function to move a wolf at each time step
 function animal_step!(agent::Wolf, model)
 
     # identify the sheep in the model
@@ -71,7 +90,7 @@ function animal_step!(agent::Sheep, model)
     agent.vel = (0.0, 0.0)
 end
 
-function initialize(; total_agents = 4, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
+function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
     space = ContinuousSpace(size; periodic = false)
     properties = Dict{Symbol, Any}(:min_safe_distance => min_safe_distance)
 
