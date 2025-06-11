@@ -20,12 +20,12 @@ dt = 1                                  # time step for simulation
 function animal_step!(agent::Sheep, model)
     
     # coding the movement described in section 3.2 of Muro
-    radius_of_movement = 5.0                      # radius
+    center = (5.0, 5.0)
+    radial_vector = agent.pos - center
+    rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
+    tangent_vector = rotation_matrix * radial_vector
 
-
-    sheep_speed = max(sheep_speed + sheep_tangent_acceleration * dt, 0)   # speed cannot be negative
-    angle_of_movement += (sheep_speed / radius_of_movement) * dt    # update angle
-    agent.vel = [radius_of_movement * cos(angle_of_movement), radius_of_movement * sin(angle_of_movement)]
+    agent.vel = agent.vel + sheep_tangent_acceleration * tangent_vector/norm(tangent_vector)
     
     move_agent!(agent, model, dt)
 
@@ -121,5 +121,5 @@ as(a::Wolf) = 10
 as(a::Sheep) = 13
 am = 'o'
 
-abmvideo("wolf_hunt.mp4", model;
+abmvideo("moving_wolf_hunt.mp4", model;
 title = "Wolf Hunt Simulation", framerate = 15, frames = 20, ac, as, am)
