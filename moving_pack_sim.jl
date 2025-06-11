@@ -25,14 +25,11 @@ function animal_step!(agent::Sheep, model)
     unit_radial_vector = (center - agent.pos) / radius
 
     # testing: println("radius is:", radius), the radius is not constant (apparently bc we only update stuff discretely)
-    unit_tangent_vector = rotation_matrix * unit_radial_vector
 
-    new_speed = dot(agent.vel, unit_tangent_vector) + sheep_tangent_acceleration * dt
+    new_speed += norm(agent.vel) + sheep_tangent_acceleration * dt
+    centrip_accel = (new_speed^2/radius)* unit_radial_vector
 
-    tangent_vel = new_speed * unit_tangent_vector
-    centrip_accel = (new_speed^2/radius)*unit_radial_vector
-
-    agent.vel = tangent_vel + centrip_accel * dt
+    agent.vel += centrip_accel * dt
 
     #=
     radial_vector = agent.pos - center
