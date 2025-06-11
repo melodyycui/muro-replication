@@ -12,20 +12,27 @@ min_safe_distance = 1.0                 # critical distance at which wolf begins
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
 sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
 sheep_angle_of_movement = 0.0           # initial angle of movement for sheep
-sheep_speed = 2                       # initial tangential speed for sheep
+sheep_speed = 2                         # initial tangential speed for sheep
 sheep_tangent_acceleration = - 0.25     # constant tangential deceleration (slowing down)
-dt = 1                                  # time step for simulation
+dt = 0.25                                  # time step for simulation
+rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
 
 # Function to move a sheep at each time step
 function animal_step!(agent::Sheep, model)
 
     center = [5.0, 5.0]
     radius = norm(agent.pos - center)
-    radial_vector = center - agent.pos
-    new_speed = norm(agent.vel) + sheep_tangent_acceleration * dt
-    centrip_accel = (new_speed^2/radius)*radial_vector
+    unit_radial_vector = (center - agent.pos) / radius
 
-    agent.vel += centrip_accel
+    # testing: println("radius is:", radius), the radius is not constant (apparently bc we only update stuff discretely)
+    unit_tangent_vector = rotation_matrix * unit_radial_vector
+
+    new_speed = dot(agent.vel, unit_tangent_vector) + sheep_tangent_acceleration * dt
+
+    tangent_vel = new_speed * unit_tangent_vector
+    centrip_accel = (new_speed^2/radius)*unit_radial_vector
+
+    agent.vel = tangent_vel + centrip_accel * dt
 
     #=
     radial_vector = agent.pos - center
@@ -124,4 +131,4 @@ as(a::Wolf) = 10
 as(a::Sheep) = 13
 am = 'o'
 abmvideo("moving_wolf_hunt.mp4", model;
-title = "Wolf Hunt Simulation", framerate = 15, frames = 20, ac, as, am)
+title = "Wolf Hunt Simulation", framerate = 15, frames = 200, ac, as, am)
