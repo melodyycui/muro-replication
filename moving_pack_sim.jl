@@ -12,7 +12,7 @@ min_safe_distance = 1.0                 # critical distance at which wolf begins
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
 sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
 sheep_angle_of_movement = 0.0           # initial angle of movement for sheep
-sheep_speed = 0.5                       # initial tangential speed for sheep
+sheep_speed = 2                       # initial tangential speed for sheep
 sheep_tangent_acceleration = - 0.25     # constant tangential deceleration (slowing down)
 dt = 1                                  # time step for simulation
 
@@ -20,11 +20,20 @@ dt = 1                                  # time step for simulation
 function animal_step!(agent::Sheep, model)
 
     center = [5.0, 5.0]
+    radius = norm(agent.pos - center)
+    radial_vector = center - agent.pos
+    new_speed = norm(agent.vel) + sheep_tangent_acceleration * dt
+    centrip_accel = (new_speed^2/radius)*radial_vector
+
+    agent.vel += centrip_accel
+
+    #=
     radial_vector = agent.pos - center
     rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
     tangent_vector = rotation_matrix * radial_vector
     agent.vel = agent.vel + sheep_tangent_acceleration * tangent_vector/norm(tangent_vector)
-    
+    =#
+
     move_agent!(agent, model, dt)
 
 end
@@ -96,7 +105,7 @@ function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance =
     )
 
     for n in 1:(total_agents - 1)
-        add_agent!(Wolf, model; vel = (1.0, 1.0))
+        add_agent!(Wolf, model; vel = (0.0, 0.0))
     end 
 
     add_agent!(Sheep, model; vel = (0.0, 0.0)) # add one sheep
