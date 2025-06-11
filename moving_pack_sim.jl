@@ -11,32 +11,26 @@ end
 min_safe_distance = 1.0                 # critical distance at which wolf begins exhibiting encircling behavior
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
 sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
-sheep_angle_of_movement = 0.0           # initial angle of movement for sheep
-sheep_speed = 2                         # initial tangential speed for sheep
-sheep_tangent_acceleration = - 0.25     # constant tangential deceleration (slowing down)
+sheep_tangent_acceleration = - 0.1     # constant tangential deceleration (slowing down)
 dt = 0.25                                  # time step for simulation
 rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
+center = [5.0, 5.0]
+sheep_init_speed = 2.0                  # initial tangential speed for sheep
 
 # Function to move a sheep at each time step
 function animal_step!(agent::Sheep, model)
 
-    center = [5.0, 5.0]
     radius = norm(agent.pos - center)
     unit_radial_vector = (center - agent.pos) / radius
 
-    # testing: println("radius is:", radius), the radius is not constant (apparently bc we only update stuff discretely)
-
-    new_speed += norm(agent.vel) + sheep_tangent_acceleration * dt
+    new_speed = norm(agent.vel) + sheep_tangent_acceleration * dt
     centrip_accel = (new_speed^2/radius)* unit_radial_vector
 
     agent.vel += centrip_accel * dt
 
-    #=
-    radial_vector = agent.pos - center
-    rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
-    tangent_vector = rotation_matrix * radial_vector
-    agent.vel = agent.vel + sheep_tangent_acceleration * tangent_vector/norm(tangent_vector)
-    =#
+    tangential_vector = rotation_matrix * unit_radial_vector
+    proj = tangential_vector * dot(agent.vel, tangential_vector)/norm(tangential_vector)
+    agent.vel = proj/norm(proj) * new_speed
 
     move_agent!(agent, model, dt)
 
@@ -112,7 +106,12 @@ function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance =
         add_agent!(Wolf, model; vel = (0.0, 0.0))
     end 
 
-    add_agent!(Sheep, model; vel = (0.0, 0.0)) # add one sheep
+    rand_pos = [5*rand(rng), 5*rand(rng)]
+    radial_vector = rand_pos - center
+    tangential_vector = rotation_matrix * radial_vector
+    initial_vel = (tangential_vector/norm(tangential_vector)) * sheep_init_speed
+
+    add_agent!(Sheep, model; pos = rand_pos, vel = initial_vel) # add one sheep
     return model
 end
 
