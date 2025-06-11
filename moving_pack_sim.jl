@@ -120,6 +120,5 @@ ac(a::Sheep) = :blue
 as(a::Wolf) = 10
 as(a::Sheep) = 13
 am = 'o'
-
 abmvideo("moving_wolf_hunt.mp4", model;
 title = "Wolf Hunt Simulation", framerate = 15, frames = 20, ac, as, am)
