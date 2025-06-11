@@ -18,13 +18,11 @@ dt = 1                                  # time step for simulation
 
 # Function to move a sheep at each time step
 function animal_step!(agent::Sheep, model)
-    
-    # coding the movement described in section 3.2 of Muro
-    center = (5.0, 5.0)
+
+    center = [5.0, 5.0]
     radial_vector = agent.pos - center
     rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
     tangent_vector = rotation_matrix * radial_vector
-
     agent.vel = agent.vel + sheep_tangent_acceleration * tangent_vector/norm(tangent_vector)
     
     move_agent!(agent, model, dt)
@@ -86,10 +84,6 @@ function animal_step!(agent::Wolf, model)
     move_agent!(agent, model, dt)
 end
 
-function animal_step!(agent::Sheep, model)
-    agent.vel = (0.0, 0.0)
-end
-
 function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
     space = ContinuousSpace(size; periodic = false)
     properties = Dict{Symbol, Any}(:min_safe_distance => min_safe_distance)
@@ -102,7 +96,7 @@ function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance =
     )
 
     for n in 1:(total_agents - 1)
-        add_agent!(Wolf, model; vel = (0.0, 0.0))
+        add_agent!(Wolf, model; vel = (1.0, 1.0))
     end 
 
     add_agent!(Sheep, model; vel = (0.0, 0.0)) # add one sheep
