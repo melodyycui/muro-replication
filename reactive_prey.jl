@@ -16,7 +16,7 @@ sheep_tangent_acceleration = - 0.1      # constant tangential deceleration (slow
 dt = 0.25                               # time step for simulation
 rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
 center = [10.0, 10.0]
-sheep_speed = 0.5                  # initial tangential speed for sheep
+sheep_speed = 0.1                  # initial tangential speed for sheep
 
 # Function to move a sheep at each time step
 function animal_step!(agent::Sheep, model)
@@ -109,7 +109,10 @@ function initialize(; total_agents = 4, size = (20.0, 20.0), min_safe_distance =
         add_agent!(Wolf, model; vel = (0.0, 0.0))
     end 
 
-    add_agent!(Sheep, model; vel = (0.0, 0.0)) # add one sheep
+    rand_pos = [5 + 10 *rand(rng), 5 + 10*rand(rng)]
+
+
+    add_agent!(Sheep, model; pos = rand_pos, vel = (0.0, 0.0)) # add one sheep
     return model
 end
 
