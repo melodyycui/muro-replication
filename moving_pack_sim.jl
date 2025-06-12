@@ -11,10 +11,10 @@ end
 min_safe_distance = 1.0                 # critical distance at which wolf begins exhibiting encircling behavior
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
 sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
-sheep_tangent_acceleration = - 0.1     # constant tangential deceleration (slowing down)
-dt = 0.25                                  # time step for simulation
+sheep_tangent_acceleration = - 0.1      # constant tangential deceleration (slowing down)
+dt = 0.25                               # time step for simulation
 rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
-center = [5.0, 5.0]
+center = [10.0, 10.0]
 sheep_init_speed = 2.0                  # initial tangential speed for sheep
 
 # Function to move a sheep at each time step
@@ -24,7 +24,7 @@ function animal_step!(agent::Sheep, model)
     unit_radial_vector = (center - agent.pos) / radius
 
     new_speed = norm(agent.vel) + sheep_tangent_acceleration * dt
-    centrip_accel = (new_speed^2/radius)* unit_radial_vector
+    centrip_accel = (new_speed^2/radius) * unit_radial_vector
 
     agent.vel += centrip_accel * dt
 
@@ -91,7 +91,7 @@ function animal_step!(agent::Wolf, model)
     move_agent!(agent, model, dt)
 end
 
-function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance = 0.1, seed = 125)
+function initialize(; total_agents = 6, size = (20.0, 20.0), min_safe_distance = 0.1, seed = 125)
     space = ContinuousSpace(size; periodic = false)
     properties = Dict{Symbol, Any}(:min_safe_distance => min_safe_distance)
 
@@ -106,7 +106,7 @@ function initialize(; total_agents = 6, size = (10.0, 10.0), min_safe_distance =
         add_agent!(Wolf, model; vel = (0.0, 0.0))
     end 
 
-    rand_pos = [5*rand(rng), 5*rand(rng)]
+    rand_pos = [5 + 10 * rand(rng), 5 + 10 * rand(rng)]
     radial_vector = rand_pos - center
     tangential_vector = rotation_matrix * radial_vector
     initial_vel = (tangential_vector/norm(tangential_vector)) * sheep_init_speed
