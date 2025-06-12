@@ -9,8 +9,8 @@ end
 
 # can maybe be put in our slider/hard coded parameters
 min_safe_distance = 3.0                 # critical distance at which wolf begins exhibiting encircling behavior
-ww_force_coefficient = 2                # coefficient of repulsive force exerted by wolf on wolf
-sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
+ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
+sw_force_coefficient = 2                # coefficient of attraction force exerted by sheep on wolf
 sheep_tangent_acceleration = - 0.1      # constant tangential deceleration (slowing down)
 dt = 0.1                                # time step for simulation
 rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
@@ -127,4 +127,4 @@ as(a::Wolf) = 10
 as(a::Sheep) = 13
 am = 'o'
 abmvideo("moving_wolf_hunt.mp4", model;
-title = "Wolf Hunt Simulation", framerate = 15, frames = 1000, ac, as, am)
+title = "Wolf Hunt Simulation", framerate = 15, frames = 200, ac, as, am)
