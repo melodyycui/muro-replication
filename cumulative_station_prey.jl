@@ -15,7 +15,7 @@ end
 min_safe_distance = 1.0                 # critical distance at which wolf begins exhibiting encircling behavior
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
 sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
-dt = 1                                  # time step for simulation
+dt = 0.1                                  # time step for simulation
 
 # Function to move a wolf at each time step, assuming stationary prey (sheep)
 function animal_step!(wolf, model)

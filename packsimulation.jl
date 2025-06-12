@@ -100,8 +100,17 @@ as(a::Animal) = a.group == 1 ? 13 : 10
 am = 'o'
 
 fig, abmstepper = InteractiveDynamics.abm_plot(model; ac, as, am)
+
+# Advance the simulation by 5 steps
+step!(abmstepper, 5)
+
+fig
+
+#= fig, abmstepper = InteractiveDynamics.abm_plot(model; ac, as, am)
 step!(abmstepper, model, agent_step! = animal_step!, model_step!, 5)
 fig
+
+=#
 
 # abmvideo("wolf_hunt.mp4", model;
 # title = "Wolf Hunt Simulation", framerate = 15, frames = 20, ac, as, am)
