@@ -99,5 +99,9 @@ ac(a::Animal) = a.group == 1 ? :blue : :green
 as(a::Animal) = a.group == 1 ? 13 : 10
 am = 'o'
 
-abmvideo("wolf_hunt.mp4", model;
-title = "Wolf Hunt Simulation", framerate = 15, frames = 20, ac, as, am)
+fig, abmstepper = InteractiveDynamics.abm_plot(model; ac, as, am)
+step!(abmstepper, model, agent_step! = animal_step!, model_step!, 5)
+fig
+
+# abmvideo("wolf_hunt.mp4", model;
+# title = "Wolf Hunt Simulation", framerate = 15, frames = 20, ac, as, am)
