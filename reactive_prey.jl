@@ -109,7 +109,7 @@ function initialize(; total_agents = 4, size = (20.0, 20.0), min_safe_distance =
         add_agent!(Wolf, model; vel = (0.0, 0.0))
     end 
 
-    rand_pos = [5 + 10 *rand(rng), 5 + 10*rand(rng)]
+    rand_pos = [5 + 10 *rand(rng), 5 + 10*rand(rng)] # more central random init position so vid stays in frame
 
 
     add_agent!(Sheep, model; pos = rand_pos, vel = (0.0, 0.0)) # add one sheep
