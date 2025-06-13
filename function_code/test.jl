@@ -21,7 +21,7 @@ function animal_step!(wolf, model)
     # Model the behavior of the wolf
     if wolf.group == 2              # check agent is a wolf
         current_distance = norm(sheep.pos - wolf.pos)
-        wolf_encounter_speed = 1.0      # this is an arbitrary speed choice
+        # wolf_encounter_speed = 1.0      # this is an arbitrary speed choice
 
         min_safe_distance = model.min_safe_distance
         ww_force_coefficient = model.ww_force_coefficient
@@ -29,7 +29,7 @@ function animal_step!(wolf, model)
 
         # for each neighbor wolf, find repulsive force α distance
         wolf_repulsion = [0, 0]
-        for neighbor in nearby_agents(wolf, model)
+        for neighbor in allagents(model)
 
             if neighbor.id != wolf.id && neighbor.group == 2
             
@@ -49,14 +49,14 @@ function animal_step!(wolf, model)
             # to determine the direction the wolf travels along the circle
             u = rotation_matrix * (wolf.pos - sheep.pos)
             dot_product = dot(u, wolf_repulsion)
-            proj_u_v = (dot_product / norm(u)^2) * u * wolf_encounter_speed
+            proj_u_v = (dot_product / norm(u)^2) * u * model.wolf_encounter_speed
 
             wolf.vel = proj_u_v
 
         else
 
             # impact of sheep attraction on distance to sheep
-            wolf_encounter_velocity = (sheep.pos - wolf.pos) / norm(sheep.pos - wolf.pos) * wolf_encounter_speed
+            wolf_encounter_velocity = (sheep.pos - wolf.pos) / norm(sheep.pos - wolf.pos) * model.wolf_encounter_speed
 
             wolf.vel = wolf_encounter_velocity + wolf_repulsion ## THINK about how repulsive forces will impact the velocity 
     
@@ -66,10 +66,10 @@ function animal_step!(wolf, model)
     end
 end
 
-function initialize(total_agents, size, min_safe_distance, ww_force_coefficient, sw_force_coefficient, dt, seed)
+function initialize(total_agents, size, min_safe_distance, ww_force_coefficient, sw_force_coefficient, wolf_encounter_speed, dt, seed)
     space = ContinuousSpace(size; periodic = false)
     properties = Dict(:min_safe_distance => min_safe_distance, :ww_force_coefficient => ww_force_coefficient,
-        :sw_force_coefficient => sw_force_coefficient,
+        :sw_force_coefficient => sw_force_coefficient, :wolf_encounter_speed => wolf_encounter_speed,
         :dt => dt
     )
     rng = Xoshiro(seed)
@@ -88,14 +88,17 @@ function initialize(total_agents, size, min_safe_distance, ww_force_coefficient,
 end
 
 # attempt at a callable function to run the simulation
-function fstation_hunt_sim(min_safe_distance, ww_force_coefficient, sw_force_coefficient, dt, 
+function fstation_hunt_sim(min_safe_distance, ww_force_coefficient, sw_force_coefficient, 
+                        wolf_encounter_speed, dt, 
                         total_agents, size, seed, framerate, frames)
+
     model = initialize(
         total_agents,
         size,
         min_safe_distance,
         ww_force_coefficient,
         sw_force_coefficient,
+        wolf_encounter_speed,
         dt,
         seed
     )
@@ -103,10 +106,12 @@ function fstation_hunt_sim(min_safe_distance, ww_force_coefficient, sw_force_coe
    # Define color, size, and marker functions
     ac(a::Animal) = a.group == 1 ? :blue : :green
     as(a::Animal) = a.group == 1 ? 13 : 10
-    am = 'o'
+    am(a::Animal) = a.group == 1 ? :diamond : 'o'
 
     # Create the animation
     abmvideo("wolf_hunt.mp4", model;
     title = "Wolf Hunt Simulation", framerate, frames, ac, as, am)
 
 end
+
+fstation_hunt_sim(2.0, 0.5, 2, 2.0, 0.05, 6, (20.0, 20.0), 125, 15, 300)
