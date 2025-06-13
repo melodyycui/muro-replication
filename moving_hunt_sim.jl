@@ -10,12 +10,12 @@ end
 # can maybe be put in our slider/hard coded parameters
 min_safe_distance = 1.0                 # critical distance at which wolf begins exhibiting encircling behavior
 ww_force_coefficient = 0.5              # coefficient of repulsive force exerted by wolf on wolf
-sw_force_coefficient = 2                # coefficient of repulsive force exerted by sheep on wolf
-sheep_tangent_acceleration = - 0.1     # constant tangential deceleration (slowing down)
+sw_force_coefficient = 2                # coefficient of attractive force exerted by sheep on wolf
+sheep_tangent_acceleration = -0.1       # constant tangential deceleration (slowing down)
 dt = 0.25                                  # time step for simulation
 rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
 center = [10.0, 10.0]
-sheep_init_speed = 1.0                  # initial tangential speed for sheep
+sheep_init_speed = 0.5                  # initial tangential speed for sheep
 
 # Function to move a sheep at each time step
 function animal_step!(agent::Sheep, model)
