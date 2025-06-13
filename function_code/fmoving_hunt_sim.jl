@@ -126,10 +126,10 @@ function initialize(total_agents, size, min_safe_distance, ww_force_coefficient,
 end
 
 # attempt at a callable function to run the simulation
-function fmoving_hunt_sim(min_safe_distance, ww_force_coefficient, sw_force_coefficient, 
-                          wolf_encounter_speed, dt, 
-                          total_agents, size, seed, framerate, frames,
-                          center, sheep_tangent_acceleration, sheep_init_speed)
+function fmoving_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_force_coefficient=2.0, 
+                          wolf_encounter_speed=1.0, dt=0.25, 
+                          total_agents=6, size=(20.0, 20.0), seed=125, framerate=15, frames=200,
+                          center=[10.0, 10.0], sheep_tangent_acceleration=-0.1, sheep_init_speed=0.5)
 
     model = initialize(
         total_agents, size, min_safe_distance, ww_force_coefficient, sw_force_coefficient,

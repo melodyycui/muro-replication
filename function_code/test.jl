@@ -88,9 +88,9 @@ function initialize(total_agents, size, min_safe_distance, ww_force_coefficient,
 end
 
 # attempt at a callable function to run the simulation
-function fstation_hunt_sim(min_safe_distance, ww_force_coefficient, sw_force_coefficient, 
-                        wolf_encounter_speed, dt, 
-                        total_agents, size, seed, framerate, frames)
+function fstation_hunt_sim(min_safe_distance=2.0, ww_force_coefficient=0.5, sw_force_coefficient=2, 
+                        wolf_encounter_speed=2.0, dt=0.05, 
+                        total_agents=6, size=(20.0, 20.0), seed=125, framerate=15, frames=300)
 
     model = initialize(
         total_agents,
