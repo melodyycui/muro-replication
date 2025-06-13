@@ -114,4 +114,15 @@ function fstation_hunt_sim(min_safe_distance, ww_force_coefficient, sw_force_coe
 
 end
 
-fstation_hunt_sim(2.0, 0.5, 2, 2.0, 0.05, 6, (20.0, 20.0), 125, 15, 300)
+# test with 5 wolves and 1 sheep
+fstation_hunt_sim(2.0,                    # min_safe_distance
+                  0.5,                    # ww_force_coefficient
+                  2,                      # sw_force_coefficient
+                  2.0,                    # wolf_encounter_speed
+                  0.05,                   # dt
+                  6,                      # total_agents
+                  (20.0, 20.0),           # size of the space
+                  125,                    # seed for random number generation
+                  15,                     # framerate
+                  300                     # frames for the video
+                  )
