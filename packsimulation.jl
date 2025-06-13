@@ -1,5 +1,6 @@
-using Pkg, InteractiveDynamics, CairoMakie, Agents, LinearAlgebra
+using Pkg, InteractiveDynamics, CairoMakie, GLMakie, Agents, LinearAlgebra
 using Random: Xoshiro
+GLMakie.activate!()
 
 #= NEED TO CONSIDER
 1. need to calibrate magnitudes of things, such as size of grid, velocity (just in case vel too big, go out of bounds)
@@ -99,12 +100,11 @@ ac(a::Animal) = a.group == 1 ? :blue : :green
 as(a::Animal) = a.group == 1 ? 13 : 10
 am = 'o'
 
-fig, abmstepper = InteractiveDynamics.abm_plot(model; ac, as, am)
+scatterkwargs = (strokewidth = 1.0,) # add stroke around each agent
+fig, ax, abmobs = abmplot(model; ac, as, am, scatterkwargs)
 
-# Advance the simulation by 5 steps
-step!(abmstepper, 5)
-
-fig
+scene = abmexploration(model; ac, as, am, adata = [:pos])
+display(scene)
 
 #= fig, abmstepper = InteractiveDynamics.abm_plot(model; ac, as, am)
 step!(abmstepper, model, agent_step! = animal_step!, model_step!, 5)
