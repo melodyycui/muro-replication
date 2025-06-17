@@ -93,8 +93,7 @@ end
 function initialize(; total_agents, size,
                     min_safe_distance, ww_force_coefficient,
                     sw_force_coefficient, wolf_encounter_speed,
-                    dt, seed, center,
-                    sheep_tangent_acceleration, sheep_speed)
+                    dt, seed, center, sheep_speed)
     space = ContinuousSpace(size; periodic = false)
 
     properties = Dict{Symbol, Any}(
@@ -104,7 +103,6 @@ function initialize(; total_agents, size,
     :wolf_encounter_speed => wolf_encounter_speed,
     :dt => dt,
     :center => center,
-    :sheep_tangent_acceleration => sheep_tangent_acceleration,
     :sheep_speed => sheep_speed
 )
 
@@ -133,7 +131,7 @@ end
 function freactive_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_force_coefficient=2.0,
                              wolf_encounter_speed=1.0, dt=0.25,
                              total_agents=6, size=(20.0,20.0), seed=125, framerate=15, frames=200,
-                             center=[10.0,10.0], sheep_tangent_acceleration=-0.1, sheep_speed=0.5)
+                             center=[10.0,10.0], sheep_speed=0.5)
 
     model = initialize(total_agents=total_agents, size=size,
                        min_safe_distance=min_safe_distance,
@@ -141,7 +139,6 @@ function freactive_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_
                        sw_force_coefficient=sw_force_coefficient,
                        wolf_encounter_speed=wolf_encounter_speed,
                        dt=dt, seed=seed, center=center,
-                       sheep_tangent_acceleration=sheep_tangent_acceleration,
                        sheep_speed=sheep_speed)
 
     ac(a::Wolf) = :green
@@ -169,6 +166,5 @@ freactive_hunt_sim(
     15,                     # framerate
     200,                    # frames 
     [10.0, 10.0],           # center of sheep movement
-    -0.1,                   # sheep_tangent_acceleration
     0.1                     # sheep_speed 
 )
