@@ -49,14 +49,14 @@ function animal_step!(wolf, model)
             # projecting the repulsive force vector onto the tangential vector and multiply by wolf speed
             # to determine the velocity the wolf travels along the circle
             dot_product = dot(u, wolf_repulsion)
-            proj_u_v = (dot_product / norm(u)^2) * u * model.wolf_encounter_speed
+            proj_u_v = (dot_product / norm(u)^2) * u * model.wolf_chase_speed
             wolf.vel = proj_u_v
 
         # if wolf is outside critical distance from sheep, wolf is attracted to sheep
         else
 
             # wolf moves in direction of sheep due to attractive force exerted by sheep on wolf
-            wolf_chase_velocity = (sheep.pos - wolf.pos) / norm(sheep.pos - wolf.pos) * model.wolf_encounter_speed
+            wolf_chase_velocity = (sheep.pos - wolf.pos) / norm(sheep.pos - wolf.pos) * model.wolf_chase_speed
             
             # wolf velocity impacted by both attraction to sheep and repulsion to neighboring wolves
             wolf.vel = wolf_chase_velocity + wolf_repulsion
@@ -69,10 +69,10 @@ function animal_step!(wolf, model)
 end
 
 # this fn initializes our agent-based model for wolf hunt of single stationary prey
-function initialize(total_agents, size, min_safe_distance, ww_force_coefficient, sw_force_coefficient, wolf_encounter_speed, dt, seed)
+function initialize(total_agents, size, min_safe_distance, ww_force_coefficient, sw_force_coefficient, wolf_chase_speed, dt, seed)
     space = ContinuousSpace(size; periodic = false)
     properties = Dict(:min_safe_distance => min_safe_distance, :ww_force_coefficient => ww_force_coefficient,
-        :sw_force_coefficient => sw_force_coefficient, :wolf_encounter_speed => wolf_encounter_speed,
+        :sw_force_coefficient => sw_force_coefficient, :wolf_chase_speed => wolf_chase_speed,
         :dt => dt
     )
     rng = Xoshiro(seed)
@@ -94,7 +94,7 @@ end
 
 # this fn returns a video simulation of a wolf pack hunting a single stationary prey
 function fstation_hunt_sim(min_safe_distance=2.0, ww_force_coefficient=0.5, sw_force_coefficient=2, 
-                        wolf_encounter_speed=2.0, dt=0.05, 
+                        wolf_chase_speed=2.0, dt=0.05, 
                         total_agents=6, size=(20.0, 20.0), seed=125, framerate=15, frames=300)
 
     model = initialize(
@@ -103,7 +103,7 @@ function fstation_hunt_sim(min_safe_distance=2.0, ww_force_coefficient=0.5, sw_f
         min_safe_distance,
         ww_force_coefficient,
         sw_force_coefficient,
-        wolf_encounter_speed,
+        wolf_chase_speed,
         dt,
         seed
     )
@@ -123,7 +123,7 @@ end
 fstation_hunt_sim(2.0,                    # min_safe_distance
                   0.5,                    # ww_force_coefficient
                   2,                      # sw_force_coefficient
-                  2.0,                    # wolf_encounter_speed
+                  2.0,                    # wolf_chase_speed
                   0.05,                   # dt
                   6,                      # total_agents
                   (20.0, 20.0),           # size of the space
