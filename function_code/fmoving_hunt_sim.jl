@@ -158,7 +158,8 @@ function fmoving_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_fo
     ac(a::Sheep) = :blue
     as(a::Wolf) = 10
     as(a::Sheep) = 13
-    am = 'o'
+    am(a::Wolf) = 'o'
+    am(a::Sheep) = :diamond
 
     # Create the animation
     abmvideo("wolf_hunt.mp4", model;
