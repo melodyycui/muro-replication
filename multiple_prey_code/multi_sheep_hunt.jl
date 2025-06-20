@@ -93,7 +93,7 @@ function animal_step!(agent::Wolf, model)
         end
     
     # update model with new velocity after dt (timestep increment for simulation)
-
+    end
     move_agent!(agent, model, model.dt)
 end
 
