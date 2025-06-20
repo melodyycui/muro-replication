@@ -102,7 +102,7 @@ function model_step!(model)
     temp_sheep_bary = [0.0, 0.0]
     temp_wolf_bary = [0.0, 0.0]
 
-    # recalculate barycenter
+    # recalculate barycenter & add code to find total_sheep and total_wolf
     for a in allagents(model)
         if typeof(a) == Sheep
             temp_sheep_bary += a.pos
@@ -115,8 +115,7 @@ function model_step!(model)
     # wolves/sheep moving towards/away
     sheep_barycenter = temp_sheep_bary / total_sheep
     wolf_barycenter = temp_wolf_bary / total_wolf # need to split total_agents into sep sheep/wolf vars
-    dist_to_bary = abs((wolf_barycenter - sheep_barycenter) 
-                        / norm(wolf_barycenter - sheep_barycenter))
+    dist_to_bary = norm(wolf_barycenter - sheep_barycenter)
 
     if (isnothing(model.target))
 
@@ -171,7 +170,6 @@ function initialize(; total_agents, size,
     end 
 
     # randomly generating a position that does NOT fall near the edges of the space
-    rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
     rand_pos = [5 + 10 *rand(rng), 5 + 10*rand(rng)] # more central random init position so vid stays in frame
 
     # adding a single sheep/prey agent at the generated random position with velocity = 0
