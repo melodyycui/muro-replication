@@ -55,32 +55,42 @@ function animal_step!(agent::Wolf, model)
 
     end
 
-    current_distance = norm(model.target.pos - agent.pos)
-    
-    # once wolf is within a critical distance to the sheep, wolf will maintain that critical distance
-    # and orbit around sheep due to repulsion from other wolves
-    if (current_distance <= model.min_safe_distance)
-
-        # find direction of wolf to sheep, rotate 90 degrees to find tangential movement direction
-        rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
-        u = rotation_matrix * (agent.pos - sheep.pos)
-
-        # projecting the repulsive force vector onto the tangential vector and multiply by wolf speed
-        # to determine the velocity the wolf travels along the circle
-        dot_product = dot(u, ww_repulsion)
-        proj_u_v = (dot_product / norm(u)^2) * u * model.wolf_chase_speed
-        agent.vel = proj_u_v
-
-    # if wolf is outside critical distance from sheep, wolf is attracted to sheep
-    else
+    if (isnothing(model.target))
 
         # wolf moves in direction of sheep due to attractive force exerted by sheep on wolf
-        wolf_chase_velocity = (sheep.pos - agent.pos) / norm(sheep.pos - agent.pos) * model.wolf_chase_speed
+        wolf_chase_velocity = (sheep_barycenter - agent.pos) / norm(sheep_barycenter - agent.pos) * model.wolf_chase_speed
 
         # wolf velocity impacted by both attraction to sheep and repulsion to neighboring wolves
         agent.vel = wolf_chase_velocity + ww_repulsion 
-    
-    end
+
+    else
+        target = model.target
+        current_distance = norm(target.pos - agent.pos)
+        
+        # once wolf is within a critical distance to the sheep, wolf will maintain that critical distance
+        # and orbit around sheep due to repulsion from other wolves
+        if (current_distance <= model.min_safe_distance)
+
+            # find direction of wolf to sheep, rotate 90 degrees to find tangential movement direction
+            rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
+            u = rotation_matrix * (agent.pos - target.pos)
+
+            # projecting the repulsive force vector onto the tangential vector and multiply by wolf speed
+            # to determine the velocity the wolf travels along the circle
+            dot_product = dot(u, ww_repulsion)
+            proj_u_v = (dot_product / norm(u)^2) * u * model.wolf_chase_speed
+            agent.vel = proj_u_v
+
+        # if wolf is outside critical distance from sheep, wolf is attracted to sheep
+        else
+
+            # wolf moves in direction of sheep due to attractive force exerted by sheep on wolf
+            wolf_chase_velocity = (target.pos - agent.pos) / norm(target.pos - agent.pos) * model.wolf_chase_speed
+
+            # wolf velocity impacted by both attraction to sheep and repulsion to neighboring wolves
+            agent.vel = wolf_chase_velocity + ww_repulsion 
+        
+        end
     
     # update model with new velocity after dt (timestep increment for simulation)
 
