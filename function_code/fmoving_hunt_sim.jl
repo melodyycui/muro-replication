@@ -61,7 +61,7 @@ function animal_step!(agent::Wolf, model)
     dt = model.dt
 
     # each neighbor wolf exerts repulsive force on current wolf agent
-    wolf_repulsion = [0, 0] # stores net wolf-wolf repulsive force vector on current wolf
+    ww_repulsion = [0, 0] # stores net wolf-wolf repulsive force vector on current wolf
     for neighbor in allagents(model)
 
         if neighbor.id != agent.id && isa(neighbor, Wolf)
@@ -69,7 +69,7 @@ function animal_step!(agent::Wolf, model)
             # sum up wolf-wolf repulsive force vectors
             # repulsive force is inversely proportional to distance between wolves
             distance_between = norm(agent.pos - neighbor.pos)
-            wolf_repulsion += ww_force_coefficient * (agent.pos - neighbor.pos) / (distance_between)^2
+            ww_repulsion += ww_force_coefficient * (agent.pos - neighbor.pos) / (distance_between)^2
 
         end
 
@@ -85,7 +85,7 @@ function animal_step!(agent::Wolf, model)
 
         # projecting the repulsive force vector onto the tangential vector and multiply by wolf speed
         # to determine the velocity the wolf travels along the circle
-        dot_product = dot(u, wolf_repulsion)
+        dot_product = dot(u, ww_repulsion)
         proj_u_v = (dot_product / norm(u)^2) * u * wolf_chase_speed
         agent.vel = proj_u_v
 
@@ -96,7 +96,7 @@ function animal_step!(agent::Wolf, model)
         wolf_chase_velocity = (sheep.pos - agent.pos) / norm(sheep.pos - agent.pos) * wolf_chase_speed
 
         # wolf velocity impacted by both attraction to sheep and repulsion to neighboring wolves
-        agent.vel = wolf_chase_velocity + wolf_repulsion
+        agent.vel = wolf_chase_velocity + ww_repulsion
     
     end
     
@@ -158,7 +158,8 @@ function fmoving_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_fo
     ac(a::Sheep) = :blue
     as(a::Wolf) = 10
     as(a::Sheep) = 13
-    am = 'o'
+    am(a::Wolf) = 'o'
+    am(a::Sheep) = :diamond
 
     # Create the animation
     abmvideo("wolf_hunt.mp4", model;

@@ -108,7 +108,7 @@ function fstation_hunt_sim(min_safe_distance=2.0, ww_force_coefficient=0.5, sw_f
         seed
     )
 
-   # Define color, size, and marker functions
+    # Define color, size, and marker functions
     ac(a::Animal) = a.group == 1 ? :blue : :green
     as(a::Animal) = a.group == 1 ? 13 : 10
     am(a::Animal) = a.group == 1 ? :diamond : 'o'
