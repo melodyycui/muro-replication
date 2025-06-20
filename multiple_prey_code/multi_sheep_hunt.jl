@@ -95,11 +95,42 @@ function animal_step!(agent::Wolf, model)
     move_agent!(agent, model, model.dt)
 end
 
+function model_step!(model)
+
+    temp_sheep_bary = [0.0, 0.0]
+    temp_wolf_bary = [0.0, 0.0]
+
+    # recalculate barycenter
+    for a in allagents(model)
+        if typeof(a) == Sheep
+            temp_sheep_bary += a.pos
+        else
+            temp_wolf_bary += a.pos
+    end
+
+    # will need to be model properties bc that'll be what 
+    # wolves/sheep moving towards/away
+    sheep_barycenter = temp_sheep_bary / total_sheep
+    wolf_barycenter = temp_wolf_bary / total_wolf # need to split total_agents into sep sheep/wolf vars
+    dist_to_bary = abs((wolf_barycenter - sheep_barycenter) 
+                        / norm(wolf_barycenter - sheep_barycenter))
+
+    # check if wolf within range
+    if (dist_to_bary < min_range)
+        in_range = true
+    else
+        in_range = false
+    end
+
+    # adjust bool in_range accordingly
+
+end
+
 # this fn initializes our agent-based model for wolf hunt of a single reactive/escaping prey
 function initialize(; total_agents, size,
                     min_safe_distance, ww_force_coefficient,
                     sw_force_coefficient, wolf_chase_speed,
-                    dt, seed, center, sheep_speed)
+                    dt, seed, center, sheep_speed,)
     space = ContinuousSpace(size; periodic = false)
 
     properties = Dict{Symbol, Any}(
@@ -109,14 +140,14 @@ function initialize(; total_agents, size,
     :wolf_chase_speed => wolf_chase_speed,
     :dt => dt,
     :center => center,
-    :sheep_speed => sheep_speed
+    :sheep_speed => sheep_speed, :in_range => false
 )
 
     rng = Xoshiro(seed)
 
     model = StandardABM(Union{Wolf, Sheep}, space;
                         properties=properties,
-                        agent_step! = animal_step!,
+                        agent_step! = animal_step!, model_step!,
                         rng=rng,
                         container=Vector,
                         scheduler=Schedulers.Randomly())
