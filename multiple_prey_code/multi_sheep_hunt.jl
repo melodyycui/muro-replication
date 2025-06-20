@@ -108,6 +108,7 @@ function model_step!(model)
             temp_sheep_bary += a.pos
         else
             temp_wolf_bary += a.pos
+        end
     end
 
     # will need to be model properties bc that'll be what 
