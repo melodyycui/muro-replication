@@ -116,8 +116,20 @@ function model_step!(model)
                         / norm(wolf_barycenter - sheep_barycenter))
 
     # check if wolf within range
-    if (dist_to_bary < min_range)
+    if (dist_to_bary < min_range) # set a min_range
         in_range = true
+
+        dist_wolfbarry_sheep = 0.0 # distance between wolf barycenter and closest sheep
+        closest_sheep = nothing
+
+        # find closest sheep to wolf barycenter
+        for sheep in allagents(model)
+            if typeof(sheep) == Sheep & norm(sheep.pos - wolf_barycenter) < dist_wolfbarry_sheep
+                dist_wolfbarry_sheep = norm(sheep.pos - wolf_barycenter)
+                closest_sheep = sheep
+            end
+        end
+
     else
         in_range = false
     end
