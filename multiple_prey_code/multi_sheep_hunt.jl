@@ -97,25 +97,25 @@ end
 
 function model_step!(model)
 
-    if (model.target == nothing)
+    temp_sheep_bary = [0.0, 0.0]
+    temp_wolf_bary = [0.0, 0.0]
 
-        temp_sheep_bary = [0.0, 0.0]
-        temp_wolf_bary = [0.0, 0.0]
+    # recalculate barycenter
+    for a in allagents(model)
+        if typeof(a) == Sheep
+            temp_sheep_bary += a.pos
+        else
+            temp_wolf_bary += a.pos
+    end
 
-        # recalculate barycenter
-        for a in allagents(model)
-            if typeof(a) == Sheep
-                temp_sheep_bary += a.pos
-            else
-                temp_wolf_bary += a.pos
-        end
+    # will need to be model properties bc that'll be what 
+    # wolves/sheep moving towards/away
+    sheep_barycenter = temp_sheep_bary / total_sheep
+    wolf_barycenter = temp_wolf_bary / total_wolf # need to split total_agents into sep sheep/wolf vars
+    dist_to_bary = abs((wolf_barycenter - sheep_barycenter) 
+                        / norm(wolf_barycenter - sheep_barycenter))
 
-        # will need to be model properties bc that'll be what 
-        # wolves/sheep moving towards/away
-        sheep_barycenter = temp_sheep_bary / total_sheep
-        wolf_barycenter = temp_wolf_bary / total_wolf # need to split total_agents into sep sheep/wolf vars
-        dist_to_bary = abs((wolf_barycenter - sheep_barycenter) 
-                            / norm(wolf_barycenter - sheep_barycenter))
+    if (isnothing(model.target))
 
         # check if wolf within range
         if (dist_to_bary < dist_init_chase)
