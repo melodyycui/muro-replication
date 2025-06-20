@@ -97,45 +97,43 @@ end
 
 function model_step!(model)
 
-    temp_sheep_bary = [0.0, 0.0]
-    temp_wolf_bary = [0.0, 0.0]
+    if (model.target == nothing)
 
-    # recalculate barycenter
-    for a in allagents(model)
-        if typeof(a) == Sheep
-            temp_sheep_bary += a.pos
-        else
-            temp_wolf_bary += a.pos
-    end
+        temp_sheep_bary = [0.0, 0.0]
+        temp_wolf_bary = [0.0, 0.0]
 
-    # will need to be model properties bc that'll be what 
-    # wolves/sheep moving towards/away
-    sheep_barycenter = temp_sheep_bary / total_sheep
-    wolf_barycenter = temp_wolf_bary / total_wolf # need to split total_agents into sep sheep/wolf vars
-    dist_to_bary = abs((wolf_barycenter - sheep_barycenter) 
-                        / norm(wolf_barycenter - sheep_barycenter))
-
-    # check if wolf within range
-    if (dist_to_bary < min_range) # set a min_range
-        in_range = true
-
-        dist_wolfbarry_sheep = 0.0 # distance between wolf barycenter and closest sheep
-        closest_sheep = nothing
-
-        # find closest sheep to wolf barycenter
-        for sheep in allagents(model)
-            if typeof(sheep) == Sheep & norm(sheep.pos - wolf_barycenter) < dist_wolfbarry_sheep
-                dist_wolfbarry_sheep = norm(sheep.pos - wolf_barycenter)
-                closest_sheep = sheep
-            end
+        # recalculate barycenter
+        for a in allagents(model)
+            if typeof(a) == Sheep
+                temp_sheep_bary += a.pos
+            else
+                temp_wolf_bary += a.pos
         end
 
-    else
-        in_range = false
+        # will need to be model properties bc that'll be what 
+        # wolves/sheep moving towards/away
+        sheep_barycenter = temp_sheep_bary / total_sheep
+        wolf_barycenter = temp_wolf_bary / total_wolf # need to split total_agents into sep sheep/wolf vars
+        dist_to_bary = abs((wolf_barycenter - sheep_barycenter) 
+                            / norm(wolf_barycenter - sheep_barycenter))
+
+        # check if wolf within range
+        if (dist_to_bary < dist_init_chase)
+            model.in_range = true
+
+            dist_closest_sheep = 1.5 * model.size[1] # distance between wolf barycenter and closest sheep
+
+            # find closest sheep to wolf barycenter
+            for a in allagents(model)
+                if typeof(a) == Sheep && norm(a.pos - wolf_barycenter) < dist_closest_sheep
+                    dist_closest_sheep = norm(sheep.pos - wolf_barycenter)
+                    if (dist_closest_sheep < dist_flock_sep)
+                        model.target = a
+                    end
+                end
+            end
+        end
     end
-
-    # adjust bool in_range accordingly
-
 end
 
 # this fn initializes our agent-based model for wolf hunt of a single reactive/escaping prey
