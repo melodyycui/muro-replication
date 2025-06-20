@@ -176,5 +176,5 @@ freactive_hunt_sim(
     15,                     # framerate
     200,                    # frames 
     [10.0, 10.0],           # center of sheep movement
-    0.1                     # sheep_speed 
+    1.3                     # sheep_speed in m/s (found from Jadhav)
 )
