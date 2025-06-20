@@ -39,17 +39,8 @@ end
 # fn updates the position and velocity of a wolf agent after one time step, dt
 function animal_step!(agent::Wolf, model)
 
-    # identify the sheep in the model
-    sheep = nothing
-    for a in allagents(model)
-        if typeof(a) == Sheep
-            sheep = a
-            break                       # exit loop once prey is found
-        end
-    end
-
     ww_repulsion = [0, 0] # stores net wolf-wolf repulsive force vector on current wolf
-    
+
     # each neighbor wolf exerts repulsive force on current wolf agent
     for neighbor in nearby_agents(agent, model)
 
@@ -64,7 +55,7 @@ function animal_step!(agent::Wolf, model)
 
     end
 
-    current_distance = norm(sheep.pos - agent.pos)
+    current_distance = norm(model.target.pos - agent.pos)
     
     # once wolf is within a critical distance to the sheep, wolf will maintain that critical distance
     # and orbit around sheep due to repulsion from other wolves
@@ -92,6 +83,7 @@ function animal_step!(agent::Wolf, model)
     end
     
     # update model with new velocity after dt (timestep increment for simulation)
+
     move_agent!(agent, model, model.dt)
 end
 
