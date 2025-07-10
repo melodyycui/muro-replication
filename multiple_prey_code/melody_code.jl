@@ -7,6 +7,11 @@ end
 
 # wolf agent type
 @agent struct Sheep(ContinuousAgent{2, Float64})
+    speed::Float64
+end
+
+function safe_norm(v)
+    return norm(v) == 0 ? [0.0, 0.0] : v / norm(v)
 end
 
 # fn updates the position and velocity of a sheep agent after one time step, dt
@@ -23,80 +28,101 @@ function animal_step!(agent::Sheep, model)
         if isa(wolf, Wolf)
 
             # placeholder values
-            a = 1
-            b = 1
+            b = 0.8
             
             # sum up the repulsive forces exerted by each wolf on the sheep
+            # force is proportional to distance between wolf and sheep
             distance_between = norm(agent.pos - wolf.pos)
+            # get the direction of the repulsive force
             unit_vector = (agent.pos - wolf.pos) / (distance_between)
-            wolf_repulsion += (a * exp(-b * distance_between)) * unit_vector
+
+            # force equation is a decaying exponential
+            wolf_repulsion += (exp(-b * distance_between)) * unit_vector
 
         end
 
     end
 
-    # sheep-sheep repulsion, alignment, attraction
+    # sheep agent also experiences external interaction forces from neighboring sheep
 
-    n_att = 3
-    n_ali = 2
-    n_rep = 0
-    sheep_attraction = [0, 0]
-    sheep_repulsion = [0, 0]
-    sheep_alignment = [0, 0]
+    n_att = 5 # number of neighboring sheep the agent is attracted to
+    n_ali = 2 # number of neighboring sheep the agent aligns with
+    sheep_attraction = [0, 0] # will hold the sum attractive force from neighboring sheep
+    sheep_alignment = [0, 0] # will hold sum alignment force from neighboring sheep
 
-    # need to replace
-    drep = 0.5
+
+    drep = 1 # min. distance at which neighboring sheep start repelling each other
+    n_rep = 0 # counts the number of neighboring sheep within drep of the agent
+    sheep_repulsion = [0, 0] # will hold the sum repulsive force from neighboring sheep
     
-    w_rep = 0.6
-    w_att = 0.3
-    w_ali = 0.2
+    # weight parameters
+    w_rep_wolf = 2 # for repulsive force from wolf
+    w_rep_sheep = 2 # for repulsive force from other sheep
+    w_att = 1.0 # for attractive force from other sheep
+    w_ali = 0.8 # for alignment with other sheep
 
     # sheep repulsed by nearby sheep that are too close
     for sheep in allagents(model)
 
+        # find all sheep within distance drep from sheep agent
         if isa(sheep, Sheep) && sheep.id != agent.id
             if norm(sheep.pos - agent.pos) < drep
-                sheep_repulsion -= (w_rep)*(sheep.pos - agent.pos)/norm(sheep.pos - agent.pos)
+
+                # add normalized repulsive force vector to total sheep repulsion
+                sheep_repulsion += safe_norm(agent.pos - sheep.pos)
+                # keep count of total number of sheep that are too close
                 n_rep += 1
             end
         end
     end
 
-    if (n_rep > 0)
-        sheep_repulsion /= n_rep
-    end
-
+    # collect all nearby sheep into an array
     neighbors = [i for i in nearby_agents(agent, model)]
 
-    # sheep attracted to neighboring sheep
-    # how to prevent repeated random selection?
+    # sheep agent attracted to n_att number of neighboring sheep
+    # (how to prevent repeated random selection?)
     for i in 1:n_att
 
         if (length(neighbors) > 0)
+            # choose a random neighbor to be attracted to and add attractive force to total
             neighbor = neighbors[rand(1:length(neighbors))]
-            sheep_attraction += (w_att/n_att) * (neighbor.pos - agent.pos)/norm(neighbor.pos - agent.pos)
+            sheep_attraction += safe_norm(neighbor.pos - agent.pos)
         end
 
     end
 
-    # sheep aligning with neighboring sheep
+    # sheep agent aligning with n_ali number of neighboring sheep
     for i in 1:n_ali
 
         if (length(neighbors) > 0)
             # ultimately have to make an array from the n_att sheep (rn, all of nearby sheep)
+            # chose a random neighbor to align with and add alignment force to total
             neighbor = neighbors[rand(1:length(neighbors))]
-            sheep_alignment += (w_ali/n_ali) * (neighbor.pos/norm(neighbor.pos))
+            sheep_alignment += safe_norm(neighbor.pos)
         end
         
     end
 
-    net_force = wolf_repulsion + sheep_repulsion + sheep_attraction + sheep_alignment
+    # normalize all forces acting on sheep agent
+    wolf_repulsion = safe_norm(wolf_repulsion)
+    sheep_repulsion = safe_norm(sheep_repulsion)
+    sheep_attraction = safe_norm(sheep_attraction)
+    sheep_alignment = safe_norm(sheep_alignment)
+
+    # scale forces by weight parameters and sum together
+    net_force = (w_rep_wolf * wolf_repulsion) + (w_rep_sheep * sheep_repulsion) 
+                + (w_att * sheep_attraction) + (w_ali * sheep_alignment)
+    
+    # v = v0 + at, a = F/m => v = v0 + F/m * t
     agent.vel += (net_force/mass_sheep)*model.dt
 
+    # direction of velocity is updated, but keep speed the same
+    agent.vel = agent.speed * safe_norm(agent.vel)
+
+    # update agent
     move_agent!(agent, model, model.dt)
 
 end
-
 
 # fn updates the position and velocity of a wolf agent after one time step, dt
 function animal_step!(agent::Wolf, model)
@@ -145,7 +171,7 @@ function animal_step!(agent::Wolf, model)
             else
 
                 # placeholder values
-                a = 500
+                a = 1
                 b = 0.8
 
                 # summing attractive forces from sheep
@@ -159,6 +185,7 @@ function animal_step!(agent::Wolf, model)
 
         acceleration = (ww_repulsion + ws_attraction) / mass_wolf
         agent.vel += acceleration * model.dt
+        agent.vel = model.wolf_chase_speed * agent.vel / norm(agent.vel)
     
     end
     
@@ -194,7 +221,7 @@ function initialize(; total_agents, size,
     
     # placeholder parameters
     total_wolf = 6
-    total_sheep = 10
+    total_sheep = 25
 
     # adding wolf agents at random positions in top-left corner with velocity = 0
     for n in 1:(total_wolf)
@@ -204,21 +231,25 @@ function initialize(; total_agents, size,
     end
 
     # adding sheep agents around the center with velocity = 0
-    for n in 1:(total_sheep)
+    for n in 1:(total_sheep)-1
         
         rand_pos = [5 + 10 *rand(rng), 5 + 10*rand(rng)]
-        add_agent!(Sheep, model; pos = rand_pos, vel = (0.0, 0.0))
+        add_agent!(Sheep, model; pos = rand_pos, vel = (0.0, 0.0), speed = 2.0)
 
     end 
+
+    # add a slower sheep
+    rand_pos = [5 + 10 *rand(rng), 5 + 10*rand(rng)]
+    add_agent!(Sheep, model; pos = rand_pos, vel = (0.0, 0.0), speed = 1.0)
 
     return model
 end
 
 # this fn returns a video simulation of a wolf pack hunting a single reactive/escaping prey
 function freactive_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_force_coefficient=2.0,
-                             wolf_chase_speed=1.0, dt=0.25,
+                             wolf_chase_speed=2.0, dt=0.25,
                              total_agents=6, size=(20.0,20.0), seed=125, framerate=15, frames=200,
-                             center=[10.0,10.0], sheep_speed=0.5)
+                             center=[10.0,10.0], sheep_speed=1.0)
 
     model = initialize(total_agents=total_agents, size=size,
                        min_safe_distance=min_safe_distance,
@@ -229,12 +260,12 @@ function freactive_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_
                        sheep_speed=sheep_speed)
 
     # Define color, size, and marker functions
-    ac(a::Wolf) = :green
-    ac(a::Sheep) = :blue
-    as(a::Wolf) = 10
-    as(a::Sheep) = 13
-    am(a::Wolf) = 'o'
-    am(a::Sheep) = :diamond
+    ac(a::Sheep) = :green
+    ac(a::Wolf) = :blue
+    as(a::Sheep) = 10
+    as(a::Wolf) = 8
+    am(a::Sheep) = 'o'
+    am(a::Wolf) = :diamond
 
     # Create the animation
     abmvideo("wolf_hunt.mp4", model;
@@ -247,13 +278,13 @@ freactive_hunt_sim(
     1.0,                    # min_safe_distance
     0.01,                    # ww_force_coefficient
     1.0,                    # sw_force_coefficient
-    1.0,                    # wolf_chase_speed
+    2.0,                    # wolf_chase_speed
     0.25,                   # dt
     4,                      # total_agents 
-    (20.0, 20.0),           # size of sim space
+    (40.0, 40.0),           # size of sim space
     124,                    # seed 
-    1,                     # framerate
-    11,                    # frames 
-    [10.0, 10.0],           # center of sheep movement
-    1.3                     # sheep_speed in m/s (found from Jadhav)
+    3,                     # framerate
+    20,                     # frames 
+    [20.0, 20.0],           # center of sheep movement
+    0.8                     # sheep_speed in m/s
 )
