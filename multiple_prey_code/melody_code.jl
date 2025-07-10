@@ -44,15 +44,15 @@ function animal_step!(agent::Sheep, model)
     end
 
     # sheep agent also experiences external interaction forces from neighboring sheep
+    
+    drep = 1 # min. distance at which neighboring sheep start repelling each other
 
     n_att = 5 # number of neighboring sheep the agent is attracted to
     n_ali = 2 # number of neighboring sheep the agent aligns with
+    n_rep = 0 # counts the number of neighboring sheep within drep of the agent
+    
     sheep_attraction = [0, 0] # will hold the sum attractive force from neighboring sheep
     sheep_alignment = [0, 0] # will hold sum alignment force from neighboring sheep
-
-
-    drep = 1 # min. distance at which neighboring sheep start repelling each other
-    n_rep = 0 # counts the number of neighboring sheep within drep of the agent
     sheep_repulsion = [0, 0] # will hold the sum repulsive force from neighboring sheep
     
     # weight parameters
