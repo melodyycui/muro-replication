@@ -3,7 +3,6 @@ using Random: Xoshiro
 using StatsBase: sample
 
 # update variables/constants list
-# figure out how to push 
 
 # constructing wolf agent type:
 @agent struct Wolf(ContinuousAgent{2, Float64})
