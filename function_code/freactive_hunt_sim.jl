@@ -48,6 +48,7 @@ function animal_step!(agent::Wolf, model)
         end
     end
 
+    current_distance = norm(sheep.pos - agent.pos)
     ww_repulsion = [0, 0] # stores net wolf-wolf repulsive force vector on current wolf
     
     # each neighbor wolf exerts repulsive force on current wolf agent
@@ -63,31 +64,27 @@ function animal_step!(agent::Wolf, model)
         end
 
     end
-
-    current_distance = norm(sheep.pos - agent.pos)
     
-    # once wolf is within a critical distance to the sheep, wolf will maintain that critical distance
-    # and orbit around sheep due to repulsion from other wolves
-    if (current_distance <= model.min_safe_distance)
+    wolf_encounter_speed = model.wolf_encounter_speed # speed at which wolf encounters sheep
 
-        # find direction of wolf to sheep, rotate 90 degrees to find tangential movement direction
+    if (current_distance <= min_safe_distance)
+
         rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
-        u = rotation_matrix * (agent.pos - sheep.pos)
 
-        # projecting the repulsive force vector onto the tangential vector and multiply by wolf speed
-        # to determine the velocity the wolf travels along the circle
+        # projecting the repulsive force vector onto the tangential vector
+        # to determine the direction the wolf travels along the circle
+        u = rotation_matrix * (agent.pos - sheep.pos)
         dot_product = dot(u, ww_repulsion)
-        proj_u_v = (dot_product / norm(u)^2) * u * model.wolf_chase_speed
+        proj_u_v = (dot_product / norm(u)^2) * u * wolf_encounter_speed
+
         agent.vel = proj_u_v
 
-    # if wolf is outside critical distance from sheep, wolf is attracted to sheep
     else
 
-        # wolf moves in direction of sheep due to attractive force exerted by sheep on wolf
-        wolf_chase_velocity = (sheep.pos - agent.pos) / norm(sheep.pos - agent.pos) * model.wolf_chase_speed
+        # impact of sheep attraction on distance to sheep
+        wolf_encounter_velocity = (sheep.pos - agent.pos) / norm(sheep.pos - agent.pos) * wolf_encounter_speed
 
-        # wolf velocity impacted by both attraction to sheep and repulsion to neighboring wolves
-        agent.vel = wolf_chase_velocity + ww_repulsion 
+        agent.vel = wolf_encounter_velocity + ww_repulsion ## THINK about how repulsive forces will impact the velocity 
     
     end
     
@@ -98,7 +95,7 @@ end
 # this fn initializes our agent-based model for wolf hunt of a single reactive/escaping prey
 function initialize(; total_agents, size,
                     min_safe_distance, ww_force_coefficient,
-                    sw_force_coefficient, wolf_chase_speed,
+                    sw_force_coefficient, wolf_encounter_speed, wolf_chase_speed,
                     dt, seed, center, sheep_speed)
     space = ContinuousSpace(size; periodic = false)
 
@@ -106,6 +103,7 @@ function initialize(; total_agents, size,
     :min_safe_distance => min_safe_distance,
     :ww_force_coefficient => ww_force_coefficient,
     :sw_force_coefficient => sw_force_coefficient,
+    :wolf_encounter_speed => wolf_encounter_speed,
     :wolf_chase_speed => wolf_chase_speed,
     :dt => dt,
     :center => center,
@@ -122,12 +120,11 @@ function initialize(; total_agents, size,
                         scheduler=Schedulers.Randomly())
 
     # adding wolf agents at random positions with velocity = 0
-    for n in 1:(total_agents - 1)
+    for _ in 1:(total_agents - 1)
         add_agent!(Wolf, model; vel = (0.0, 0.0))
     end 
 
     # randomly generating a position that does NOT fall near the edges of the space
-    rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
     rand_pos = [5 + 10 *rand(rng), 5 + 10*rand(rng)] # more central random init position so vid stays in frame
 
     # adding a single sheep/prey agent at the generated random position with velocity = 0
@@ -137,6 +134,7 @@ end
 
 # this fn returns a video simulation of a wolf pack hunting a single reactive/escaping prey
 function freactive_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_force_coefficient=2.0,
+                            wolf_encounter_speed=1.0,
                              wolf_chase_speed=1.0, dt=0.25,
                              total_agents=6, size=(20.0,20.0), seed=125, framerate=15, frames=200,
                              center=[10.0,10.0], sheep_speed=0.5)
@@ -145,6 +143,7 @@ function freactive_hunt_sim(min_safe_distance=1.0, ww_force_coefficient=0.5, sw_
                        min_safe_distance=min_safe_distance,
                        ww_force_coefficient=ww_force_coefficient,
                        sw_force_coefficient=sw_force_coefficient,
+                       wolf_encounter_speed=wolf_encounter_speed,
                        wolf_chase_speed=wolf_chase_speed,
                        dt=dt, seed=seed, center=center,
                        sheep_speed=sheep_speed)
@@ -168,6 +167,7 @@ freactive_hunt_sim(
     1.0,                    # min_safe_distance
     0.5,                    # ww_force_coefficient
     1.0,                    # sw_force_coefficient
+    1.0,                    # wolf_encounter_speed
     1.0,                    # wolf_chase_speed
     0.25,                   # dt
     4,                      # total_agents 
