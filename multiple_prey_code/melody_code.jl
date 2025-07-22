@@ -171,6 +171,8 @@ function animal_step!(agent::Wolf, model)
 
                 end
 
+                wolf_speed = model.wolf_speed
+
                 # find direction of wolf to sheep, rotate 90 degrees to find tangential movement direction
                 rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)]
                 u = rotation_matrix * (agent.pos - sheep.pos)
@@ -190,7 +192,7 @@ function animal_step!(agent::Wolf, model)
 
                 # summing attractive forces from sheep
                 unit_vector = (sheep.pos - agent.pos) / current_distance
-                sheep_attraction += a * exp(-b * current_distance) * unit_vector
+                sheep_attraction += exp(-b * current_distance) * unit_vector
             end
         end
     end
