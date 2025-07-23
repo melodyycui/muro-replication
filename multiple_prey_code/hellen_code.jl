@@ -6,11 +6,6 @@ using StatsBase: sample
 
 # constructing wolf agent type:
 @agent struct Wolf(ContinuousAgent{2, Float64})
-
-    target_id::Union{Nothing, Int} # ID of the current target sheep
-    time_on_target::Float64 # time spent chasing the current target sheep
-    was_circling::Bool # whether the wolf was circling a sheep in the last step
-
 end
 
 # constructing sheep agent type:
@@ -21,98 +16,30 @@ end
 # this fn updates the position and velocity of a wolf agent after one time step, dt:
 function animal_step!(agent::Wolf, model)
 
+    ww_repulsion = [0.0, 0.0] # net wolf-wolf repulsive force on current agent once it's circling target
     mass_wolf = 1
 
-    # Wolf-Wolf Repulsion: Wolves want to avoid each other:
-    ww_repulsionulsion = [0.0, 0.0]
+    # Find closest sheep
+    target_sheep = nothing
+    min_distance = Inf
 
-    for neighbor in allagents(model)
-        if neighbor.id != agent.id && isa(neighbor, Wolf)
 
-        dist = norm(agent.pos - neighbor.pos)
-
-            # The following contains a 'Divide by Zero' error prevention (assuming that it is very 
-            # unlikely that two wolves will spawn in the same location). Can replace with 
-            # ww_repulsionulsion += model.ww_force_coefficient * (agent.pos - neighbor.pos) / (dist^2 + ε) 
-            # where ε is a small positive number like 1e-8, if the above assumption is not valid.
-            if dist > 1e-8
-                
-                ww_repulsionulsion += model.ww_force_coefficient * (agent.pos - neighbor.pos) / dist^2
-
+    for sheep in allagents(model)
+        if isa(sheep, Sheep)
+            dist = norm(agent.pos - sheep.pos)
+            if dist < min_distance
+                min_distance = dist
+                target_sheep = sheep
             end
-
         end
-
     end
 
-    # Obtain a list of all sheep agents in the model
-    sheep_list = [s for s in allagents(model) if isa(s, Sheep)]
 
-    # Sort all sheep by distance away from the wolf agent (closest first)
-    sorted_sheep = sort(sheep_list, by = s -> norm(agent.pos - s.pos))
-
-    # If there are no sheep, stop
-    if isempty(sorted_sheep)
-
+    if isnothing(target_sheep)
         agent.vel = [0.0, 0.0]
         return
-
     end
 
-    # Initialize target sheep if none exists
-    if isnothing(agent.target_id)
-
-        agent.target_id = sorted_sheep[1].id
-        agent.time_on_target = 0.0 # Set the time our wolf agent has spent chasing the current target to 0
-
-    end
-
-    # Find current target sheep by ID
-    index = findfirst(s -> s.id == agent.target_id, sorted_sheep)
-    target_sheep = isnothing(index) ? nothing : sorted_sheep[index]
-
-    # If target sheep disappeared, reset to new closest
-    if target_sheep === nothing
-
-        agent.target_id = sorted_sheep[1].id # Reset target ID to the closest sheep
-        agent.time_on_target = 0.0 # Reset time on target to 0
-        target_sheep = sorted_sheep[1]
-
-    end
-
-    # Check target sheep speed
-    target_sheep_speed = norm(target_sheep.vel)
-
-    # Assumption: If wolves are 'successfully' chasing down a target sheep, the target must be slowing down. 
-    # After a certain length of time, agent.time_on_target, during a 'successful' chase, 
-    #the target sheep's speed should be below a threshold, sheep_threshold. 
-    # Otherwise, the wolf agent will switch to a new target sheep.
-
-    sheep_speed_threshold = 0 
-
-    # Increment time spent by current wolf agent chasing down the current target sheet
-    agent.time_on_target += model.dt
-
-    # Switch target sheep if target is still faster than the sheep_speed_threshold after 7 seconds
-    # NOTE: 7 seconds is a placeholder value, I will make it a parameter once feedback has been given to this model
-    if agent.time_on_target >= 7.0 && target_sheep_speed > sheep_speed_threshold
-
-        for s in sorted_sheep
-
-            # The sorted_sheep list is sorted by distance, so we can break as soon as 
-            # we find a sheep that is not the current target:
-            if s.id != agent.target_id
-
-                agent.target_id = s.id
-                agent.time_on_target = 0.0
-                target_sheep = s
-                break
-
-            end
-
-        end
-
-    end
 
     # Compute distance from current wolf agent to target sheep
     current_wolf_sheep_distance = norm(agent.pos - target_sheep.pos)
@@ -126,11 +53,33 @@ function animal_step!(agent::Wolf, model)
         to_sheep = agent.pos - target_sheep.pos
 
         rotation_matrix = [cos(pi/2) sin(pi/2); -sin(pi/2) cos(pi/2)] # 90-degree rotation matrix
-
+        
         # Compute the tangential direction for wolf's circling behaviour
         u = rotation_matrix * to_sheep
 
-        dot_product = dot(u, ww_repulsionulsion)
+
+        # Wolf-Wolf Repulsion: Wolves want to avoid each other once they are circling a target sheep
+
+        for neighbor in allagents(model)
+            if neighbor.id != agent.id && isa(neighbor, Wolf)
+
+            dist = norm(agent.pos - neighbor.pos)
+
+                # The following contains a 'Divide by Zero' error prevention (assuming that it is very 
+                # unlikely that two wolves will spawn in the same location). Can replace with 
+                # ww_repulsion += model.ww_force_coefficient * (agent.pos - neighbor.pos) / (dist^2 + ε) 
+                # where ε is a small positive number like 1e-8, if the above assumption is not valid.
+                if dist > 1e-8
+                
+                    ww_repulsion += model.ww_force_coefficient * (agent.pos - neighbor.pos) / dist^2
+
+                end
+
+            end
+
+        end
+
+        dot_product = dot(u, ww_repulsion)
         denom = norm(u)^2
 
         if denom > 1e-8
@@ -143,28 +92,10 @@ function animal_step!(agent::Wolf, model)
 
         end
 
-        # If this wolf wasn't circling target sheep in last step, increment count of wolves circling the sheep
-        if !agent.was_circling
-
-            model.sheep_trapped_by[target_sheep.id] = get(model.sheep_trapped_by, target_sheep.id, 0) + 1
-
-        end
-
-        agent.was_circling = true
-
     end
 
     # If the wolf is not close enough to circle, it will chase the target sheep
     if !circling && current_wolf_sheep_distance > 1e-8
-
-        # If the wolf was circling the sheep in the last step, decrement count of wolves circling the sheep
-        if agent.was_circling
-
-            model.sheep_trapped_by[target_sheep.id] = max(0, get(model.sheep_trapped_by, target_sheep.id, 0) - 1)
-            
-        end
-
-        agent.was_circling = false
 
         # Calculate the direction vector from the wolf to the target sheep
         unit_vec = (target_sheep.pos - agent.pos) / current_wolf_sheep_distance
@@ -173,8 +104,8 @@ function animal_step!(agent::Wolf, model)
         a, b = 50, 0.05
         ws_attraction = a * exp(-b * current_wolf_sheep_distance) * unit_vec
 
-        # Net force on wolf agent is sum of wolf-wolf repulsion and wolf-sheep attraction forces acting on it:
-        net_force_on_wolf = (ww_repulsionulsion + ws_attraction)  
+        # Net force on non-orbiting wolf agent is the wolf-sheep attraction forces acting on it:
+        net_force_on_wolf = ws_attraction  
 
         # update the velocity of the wolf agent:
         agent.vel += (net_force_on_wolf/ mass_wolf) * model.dt
@@ -197,20 +128,6 @@ end
 
 # this fn updates the position and velocity of a sheep agent after one time step, dt:
 function animal_step!(agent::Sheep, model)
-
-    # Model assumption: Once at least 3 wolves are circling a sheep, the sheep is considered 'sufficiently trapped'
-    # and will stop moving. This is to prevent the sheep from moving indefinitely and allow wolves to actually 
-    # encircle and 'capture' the sheep.
-
-    # Check if this sheep is 'sufficiently trapped'
-    num_wolves_sufficiently_trapping = get(model.sheep_trapped_by, agent.id, 0)
-
-    if num_wolves_sufficiently_trapping >= 3
-
-        agent.vel = [0.0, 0.0] # sheep is trapped, so stop moving
-        return
-
-    end
 
     mass_sheep = 1
 
@@ -292,12 +209,6 @@ function animal_step!(agent::Sheep, model)
     # Find all nearby sheep agents that are not the current sheep agent:
     neighbors = [i for i in nearby_agents(agent, model) if isa(i, Sheep) && i.id != agent.id]
 
-    if isempty(neighbors)
-
-        return  # no nearby agents — skip all social behavior
-
-    end
-
     # Find random sample (w/0 replacement) of num_of_attractive_sheep sheep neighbors for the current sheep to be attracted to:
     sample_of_attractive_neighbors = sample(neighbors, min(num_of_attractive_sheep, length(neighbors)); replace=false)
 
@@ -314,7 +225,7 @@ function animal_step!(agent::Sheep, model)
 
     end
 
-    # Find random sample (w/0 replacement) of num_of_alignment_sheep sheep neighbors for the current sheep to align with:
+    # Find random sample (w/0 replacement) of num_of_alignment_sheep sheep neighbors for current sheep to align with:
     sample_of_alignment_neighbors = sample(neighbors, min(num_of_alignment_sheep, length(neighbors)); replace=false)
 
     for neighbor in sample_of_alignment_neighbors
@@ -329,15 +240,23 @@ function animal_step!(agent::Sheep, model)
 
     end
 
-    # net force on the sheep agent is sum of the wolf-sheep repulsion, sheep-sheep repulsion,
+    if isempty(neighbors)
+
+        net_force_on_sheep = ws_repulsion # If there are no neighbors, the sheep only feels the wolf-sheep repulsion 
+
+    # Otherwise, net force on the sheep agent is sum of the wolf-sheep repulsion, sheep-sheep repulsion,
     # sheep-sheep attraction, and sheep-sheep alignment forces acting on it:
-    net_force_on_sheep = ws_repulsion + ss_repulsion + ss_attraction + ss_alignment
+    else
+    
+        net_force_on_sheep = ws_repulsion + ss_repulsion + ss_attraction + ss_alignment
+
+    end
 
     # update the velocity of the sheep agent:
     agent.vel += (net_force_on_sheep/mass_sheep)*model.dt
 
     # Capping the speed of the sheep agent to a max_sheep_speed
-    max_sheep_speed = 5.0  # can adjust this value as needed
+    max_sheep_speed = 3.0  # can adjust this value as needed
     current_sheep_speed = norm(agent.vel)
 
     if current_sheep_speed > max_sheep_speed
@@ -354,8 +273,7 @@ end
 # this fn initializes our model with wolves randomly generated in the upper left quadrant, [5, 90] to [15, 95],
 # and sheep randomly generated in the center of the simulation space, [45, 45] to [65, 65]:
 function initialize(; size, wolf_orbit_dist_threshold, ww_force_coefficient,
-    sw_force_coefficient, wolf_chase_speed,
-    dt, seed, center, sheep_speed, num_wolf, num_sheep)
+    wolf_chase_speed, dt, seed, center, sheep_speed, num_wolf, num_sheep)
 
 
     space = ContinuousSpace(size; periodic = false)
@@ -364,12 +282,10 @@ function initialize(; size, wolf_orbit_dist_threshold, ww_force_coefficient,
     properties = Dict(
         :wolf_orbit_dist_threshold => wolf_orbit_dist_threshold,
         :ww_force_coefficient => ww_force_coefficient,
-        :sw_force_coefficient => sw_force_coefficient,
         :wolf_chase_speed => wolf_chase_speed,
         :dt => dt,
         :center => center,
         :sheep_speed => sheep_speed,
-        :sheep_trapped_by => Dict{Int, Int}()
     )
 
 
@@ -387,8 +303,7 @@ function initialize(; size, wolf_orbit_dist_threshold, ww_force_coefficient,
    for _ in 1:num_wolf
 
         rand_pos = [5 + 10 * rand(rng), 90 + 5 * rand(rng)]  # x: 5–15, y: 90–95
-        add_agent!(Wolf, model; pos = rand_pos, vel = (0.0, 0.0), target_id = nothing, 
-        time_on_target = 0.0, was_circling = false)
+        add_agent!(Wolf, model; pos = rand_pos, vel = (0.0, 0.0))
 
    end
 
@@ -407,7 +322,7 @@ end
 
 # this fn make simulation video of the wolves hunting sheep:
 function multi_hunt_sim(; wolf_orbit_dist_threshold=0.5, ww_force_coefficient=1.0,
-    sw_force_coefficient=2.0, wolf_chase_speed=1.0, dt=0.1,
+    wolf_chase_speed=1.0, dt=0.1,
     size=(20.0, 20.0), seed=125, framerate=15, frames=200,
     center=[10.0, 10.0], sheep_speed=0.5, num_wolf=3, num_sheep=5)
 
@@ -416,7 +331,6 @@ function multi_hunt_sim(; wolf_orbit_dist_threshold=0.5, ww_force_coefficient=1.
         size=size,
         wolf_orbit_dist_threshold=wolf_orbit_dist_threshold,
         ww_force_coefficient=ww_force_coefficient,
-        sw_force_coefficient=sw_force_coefficient,
         wolf_chase_speed=wolf_chase_speed,
         dt=dt,
         seed=seed,
@@ -446,16 +360,15 @@ end
 # testing
 multi_hunt_sim(
     wolf_orbit_dist_threshold=5.0,      # distance at which wolves will start circling sheep
-    ww_force_coefficient=1.0,   # wolf-wolf repulsion coefficient
-    sw_force_coefficient=5.0,   # wolf-sheep attraction coefficient
-    wolf_chase_speed=1.0,       # speed at which wolves chase sheep
-    dt=0.05,                    # time step for the simulation
-    size=(100.0, 100.0),        # size of the simulation space
-    seed=124,                   # random seed for reproducibility
-    framerate=15,               # frames per second for the video
-    frames=2000,                # number of frames in the video
-    center=[50.0, 50.0],        # center of the simulation space
-    sheep_speed=0.75,           # speed of the sheep
-    num_wolf=6,                 # number of wolves in the simulation
-    num_sheep=30                # number of sheep in the simulation
+    ww_force_coefficient=5.0,           # wolf-wolf repulsion coefficient
+    wolf_chase_speed=1.5,               # speed at which wolves chase sheep
+    dt=0.05,                            # time step for the simulation
+    size=(100.0, 100.0),                # size of the simulation space
+    seed=124,                           # random seed for reproducibility
+    framerate=15,                       # frames per second for the video
+    frames=2000,                        # number of frames in the video
+    center=[50.0, 50.0],                # center of the simulation space
+    sheep_speed=0.5,                    # speed of the sheep
+    num_wolf=12,                        # number of wolves in the simulation
+    num_sheep=30                        # number of sheep in the simulation
 ) 
