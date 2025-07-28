@@ -33,7 +33,6 @@ function animal_step!(agent::Sheep, model)
     n_rep = 0 # counts the number of neighboring sheep within drep of the agent
 
     # weight parameters
-    w_prev = model.w_prev # previous direction component
     w_rep_ws = model.w_rep_ws # for repulsive force from wolf
     w_rep_ss = model.w_rep_ss # for repulsive force from other sheep
     w_att = model.w_att # for attractive force from other sheep
