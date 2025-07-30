@@ -24,8 +24,8 @@ end
 function animal_step!(agent::Sheep, model)
     
     d_rep = model.d_rep # min. distance at which neighboring sheep start repelling each other
-    epsilon = 0.5 # half the width of the corona
-    d_C = 5.0 # distance to the center of the corona
+    epsilon = model.epsilon # half the width of the corona
+    d_C = model.d_C # distance to the center of the corona
 
     # number of neighboring sheep exerting interaction forces on agent
     n_att = model.n_att # number of neighboring sheep the agent is attracted to
@@ -133,20 +133,17 @@ function animal_step!(agent::Sheep, model)
     sheep_repulsion = safe_norm(sheep_repulsion)
     sheep_attraction = safe_norm(sheep_attraction)
     sheep_alignment = [cos(heading_angle), sin(heading_angle)]
-    prev_direction = safe_norm(agent.vel)
 
     # scale forces by weight parameters and sum together
-    change_direction = (w_rep_ws * wolf_repulsion) + (w_rep_ss * sheep_repulsion) + 
+    net_direction = (w_rep_ws * wolf_repulsion) + (w_rep_ss * sheep_repulsion) + 
                 (w_att * sheep_attraction) + (w_ali * sheep_alignment)
     
-    curr_dir = prev_direction + change_direction*model.dt
-    
     # split into net change in direction and prev direction
-    agent.vel = safe_norm(curr_dir) * agent.speed * agent.health
+    agent.vel = safe_norm(net_direction) * agent.speed * agent.health
 
 
-    if (agent.health >= 0.001/3)
-        agent.health -= 0.001/3
+    if (agent.health >= 1/5000)
+        # agent.health -= 1/5000
     end
 
     # update agent
@@ -163,8 +160,8 @@ function animal_step!(agent::Wolf, model)
 
     w_rep_ww = model.w_rep_ww
     wolf_speed = model.wolf_speed
-    epsilon = 0.5
-    d_C = 5.0
+    epsilon = model.epsilon # half the width of the corona
+    d_C = model.d_C # distance to the center of the corona
 
     # constants to control how fast force exponentially decays
     a = model.a
@@ -223,7 +220,7 @@ function animal_step!(agent::Wolf, model)
             wolf_repulsion += w_rep_ww * (agent.pos - wolf.pos) / (dist)^2
         
         end
-
+    
     end
 
     net_direction = sheep_attraction + wolf_repulsion
@@ -231,6 +228,7 @@ function animal_step!(agent::Wolf, model)
     
     # update model with new velocity after dt (timestep increment for simulation)
     move_agent!(agent, model, model.dt)
+
 end
 
 # this fn initializes our agent-based model for wolf hunt of a single reactive/escaping prey
@@ -240,8 +238,9 @@ function initialize(; size,
                     a, b, c,
                     wolf_speed, sheep_speed,
                     wolf_mass, sheep_mass,
-                    n_att, n_ali, w_prev,
+                    n_att, n_ali,
                     w_rep_ws, w_rep_ss, w_att, w_ali,
+                    epsilon, d_C,
                     dt, seed)
     space = ContinuousSpace(size; periodic = false)
 
@@ -260,11 +259,12 @@ function initialize(; size,
     :sheep_mass => sheep_mass,
     :n_att => n_att, 
     :n_ali => n_ali,
-    :w_prev => w_prev,
     :w_rep_ws => w_rep_ws,
     :w_rep_ss => w_rep_ss,
     :w_att => w_att,
     :w_ali => w_ali,
+    :epsilon => epsilon,
+    :d_C => d_C,
     :dt => dt,
     :in_range => false
 )
@@ -306,8 +306,9 @@ end
 function freactive_hunt_sim(total_wolf = 6, total_sheep = 25, d_rep = 1.0, w_rep_ww = 0.01,
                              a = 1, b = 0.8, c = 0.8,
                              wolf_speed = 2.0, sheep_speed = 1.0, wolf_mass = 1.0, sheep_mass = 1.0, 
-                             n_att = 5, n_ali = 2, w_prev = 2,
+                             n_att = 5, n_ali = 2,
                              w_rep_ws = 2, w_rep_ss = 2, w_att = 1.0, w_ali = 0.8,
+                             epsilon = 0.5, d_C = 0.5,
                              dt = 0.25, size = (40.0, 40.0), seed = 124, framerate = 5, frames = 40)
 
     model = initialize(; size, total_wolf, total_sheep,
@@ -319,11 +320,12 @@ function freactive_hunt_sim(total_wolf = 6, total_sheep = 25, d_rep = 1.0, w_rep
                        wolf_mass,
                        sheep_mass,
                        n_att, n_ali,
-                       w_prev,
                        w_rep_ws,
                        w_rep_ss,
                        w_att,
                        w_ali,
+                       epsilon,
+                       d_C,
                        dt, seed)
 
     # Define color, size, and marker functions
@@ -346,7 +348,7 @@ freactive_hunt_sim(
     1.0,                    # d_rep
     1.0,                    # w_rep_ww
     1.0,                    # a
-    0.7,                    # b
+    2.0,                    # b
     0.8,                    # c
     5.0,                    # wolf_speed
     5.0,                    # sheep_speed
@@ -354,16 +356,17 @@ freactive_hunt_sim(
     1.0,                    # sheep_mass
     5,                      # n_att
     3,                      # n_ali
-    10.0,                   # w_prev
     10.0,                   # w_rep_ws
-    10.0,                   # w_rep_ss
-    7.0,                    # w_att
+    13.0,                   # w_rep_ss
+    5.0,                    # w_att
     5.0,                    # w_ali
+    0.5,                    # epsilon
+    5.0,                    # d_C
     0.01,                   # dt
     (100.0, 100.0),         # size of sim space
-    120,                    # seed 
-    1000,                    # framerate
-    4000                    # frames
+    120,                     # seed 
+    1000,                   # framerate
+    5000                    # frames
 )
 
 println("success!")
